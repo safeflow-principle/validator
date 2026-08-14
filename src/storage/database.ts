@@ -3,16 +3,36 @@ import type {
   Annotation,
   BenchmarkPack,
   BlindedValidationItem,
+  HumanValidationProgress,
   ImportRun,
   JudgeArtifact,
   Project,
+  ProjectDetail,
+  ProjectStatus,
+  ProjectSummary,
   ReferenceArtifact,
   ValidationItem,
 } from "../core/types";
 import { DATABASE_NAME, DATABASE_SCHEMA, DATABASE_VERSION, STORE_NAMES, type StoreName } from "./schema";
 import type { LocalImportBundle } from "../import/buildBundle";
+import { calculateHumanProgress, sortItemsBySourceOrder, statusAfterAnnotation } from "../projects/progress";
+import { LOCAL_VALIDATOR_ID } from "../core/constants";
 
 type StoredBenchmarkPack = { key: string; pack: BenchmarkPack; installedAt: string };
+
+function normalizeProject(value: Project | (Omit<Project, "status"> & { status: string })): Project {
+  return { ...value, status: ["READY", "VALIDATING", "REVIEW", "HUMAN_COMPLETE"].includes(value.status) ? value.status as ProjectStatus : "READY" };
+}
+
+function normalizeAnnotation(value: Annotation | (Omit<Annotation, "status" | "evidenceSpans"> & { status: string; evidenceSpans?: Annotation["evidenceSpans"]; finalizedAt?: string })): Annotation {
+  const legacy = value as typeof value & { finalizedAt?: string };
+  return {
+    ...value,
+    status: value.status === "finalized" ? "submitted" : value.status as Annotation["status"],
+    evidenceSpans: Array.isArray(value.evidenceSpans) ? value.evidenceSpans : [],
+    ...(legacy.finalizedAt && !("submittedAt" in value) ? { submittedAt: legacy.finalizedAt } : {}),
+  } as Annotation;
+}
 
 export interface SafeFlowDatabase {
   close(): void;
@@ -26,6 +46,13 @@ export interface SafeFlowDatabase {
   putBenchmarkPack(value: BenchmarkPack): Promise<void>;
   putImportRun(value: ImportRun): Promise<void>;
   importProjectBundle(value: LocalImportBundle): Promise<void>;
+  listProjectSummaries(): Promise<ProjectSummary[]>;
+  getProjectDetail(id: string): Promise<ProjectDetail | undefined>;
+  getBlindedProjectItems(projectId: string): Promise<BlindedValidationItem[]>;
+  getProjectAnnotations(projectId: string, validatorId?: string): Promise<Annotation[]>;
+  saveAnnotation(value: Annotation): Promise<HumanValidationProgress>;
+  setProjectStatus(projectId: string, status: ProjectStatus): Promise<void>;
+  deleteProject(projectId: string): Promise<void>;
   getBlindedItem(id: string): Promise<BlindedValidationItem | undefined>;
   getAnnotation(id: string): Promise<Annotation | undefined>;
 }
@@ -72,6 +99,27 @@ class BrowserSafeFlowDatabase implements SafeFlowDatabase {
     return value as T | undefined;
   }
 
+  private async getAll<T>(storeName: StoreName): Promise<T[]> {
+    const transaction = this.db.transaction(storeName, "readonly");
+    const values = await requestResult(transaction.objectStore(storeName).getAll());
+    await transactionDone(transaction);
+    return values as T[];
+  }
+
+  private async getAllByIndex<T>(storeName: StoreName, indexName: string, key: IDBValidKey): Promise<T[]> {
+    const transaction = this.db.transaction(storeName, "readonly");
+    const values = await requestResult(transaction.objectStore(storeName).index(indexName).getAll(key));
+    await transactionDone(transaction);
+    return values as T[];
+  }
+
+  private async getAllKeysByIndex(storeName: StoreName, indexName: string, key: IDBValidKey): Promise<IDBValidKey[]> {
+    const transaction = this.db.transaction(storeName, "readonly");
+    const values = await requestResult(transaction.objectStore(storeName).index(indexName).getAllKeys(key));
+    await transactionDone(transaction);
+    return values;
+  }
+
   putProject(value: Project) { return this.put(STORE_NAMES.projects, value); }
   putValidationItem(value: ValidationItem) { return this.put(STORE_NAMES.validationItems, value); }
   putAnnotation(value: Annotation) { return this.put(STORE_NAMES.annotations, value); }
@@ -97,6 +145,118 @@ class BrowserSafeFlowDatabase implements SafeFlowDatabase {
     await transactionDone(transaction);
   }
 
+  async listProjectSummaries(): Promise<ProjectSummary[]> {
+    const projects = (await this.getAll<Project>(STORE_NAMES.projects)).map(normalizeProject);
+    const summaries = await Promise.all(projects.map(async (project) => {
+      const [items, annotations, importRuns] = await Promise.all([
+        this.getAllByIndex<ValidationItem>(STORE_NAMES.validationItems, "by-project", project.id),
+        this.getAllByIndex<Annotation>(STORE_NAMES.annotations, "by-project", project.id).then((values) => values.map(normalizeAnnotation).filter((annotation) => annotation.validatorId === LOCAL_VALIDATOR_ID)),
+        this.getAllByIndex<ImportRun>(STORE_NAMES.importRuns, "by-project", project.id),
+      ]);
+      const timestamps = [project.updatedAt, ...annotations.map((annotation) => annotation.updatedAt), ...importRuns.map((run) => run.createdAt)];
+      return {
+        project,
+        sourceName: importRuns[0]?.sourceName ?? "Local dataset",
+        lastActivityAt: timestamps.sort().at(-1) ?? project.updatedAt,
+        progress: calculateHumanProgress(items, annotations),
+      };
+    }));
+    return summaries.sort((left, right) => right.lastActivityAt.localeCompare(left.lastActivityAt));
+  }
+
+  async getProjectDetail(id: string): Promise<ProjectDetail | undefined> {
+    const storedProject = await this.get<Project>(STORE_NAMES.projects, id);
+    if (!storedProject) return undefined;
+    const project = normalizeProject(storedProject);
+    const [items, annotations, importRuns] = await Promise.all([
+      this.getAllByIndex<ValidationItem>(STORE_NAMES.validationItems, "by-project", id),
+      this.getAllByIndex<Annotation>(STORE_NAMES.annotations, "by-project", id).then((values) => values.map(normalizeAnnotation).filter((annotation) => annotation.validatorId === LOCAL_VALIDATOR_ID)),
+      this.getAllByIndex<ImportRun>(STORE_NAMES.importRuns, "by-project", id),
+    ]);
+    const importRun = importRuns[0];
+    const timestamps = [project.updatedAt, ...annotations.map((annotation) => annotation.updatedAt), ...(importRun ? [importRun.createdAt] : [])];
+    return {
+      project,
+      sourceName: importRun?.sourceName ?? "Local dataset",
+      lastActivityAt: timestamps.sort().at(-1) ?? project.updatedAt,
+      progress: calculateHumanProgress(items, annotations),
+      ...(importRun ? { importRun } : {}),
+    };
+  }
+
+  async getBlindedProjectItems(projectId: string): Promise<BlindedValidationItem[]> {
+    const items = sortItemsBySourceOrder(await this.getAllByIndex<ValidationItem>(STORE_NAMES.validationItems, "by-project", projectId));
+    return items.map(({ id, projectId: itemProjectId, externalId, prompt, response, categoryId }) => ({
+      id,
+      projectId: itemProjectId,
+      externalId,
+      prompt,
+      response,
+      categoryId,
+    }));
+  }
+
+  getProjectAnnotations(projectId: string, validatorId = LOCAL_VALIDATOR_ID) {
+    return this.getAllByIndex<Annotation>(STORE_NAMES.annotations, "by-project", projectId)
+      .then((values) => values.map(normalizeAnnotation).filter((annotation) => annotation.validatorId === validatorId));
+  }
+
+  async saveAnnotation(value: Annotation): Promise<HumanValidationProgress> {
+    const existing = await this.getAnnotation(value.id);
+    if (existing && value.revision <= existing.revision) {
+      throw new Error(`Annotation revision must increase beyond ${existing.revision}.`);
+    }
+    await this.putAnnotation(value);
+    const [project, items, annotations] = await Promise.all([
+      this.get<Project>(STORE_NAMES.projects, value.projectId).then((project) => project ? normalizeProject(project) : undefined),
+      this.getAllByIndex<ValidationItem>(STORE_NAMES.validationItems, "by-project", value.projectId),
+      this.getAllByIndex<Annotation>(STORE_NAMES.annotations, "by-project", value.projectId).then((values) => values.map(normalizeAnnotation).filter((annotation) => annotation.validatorId === value.validatorId)),
+    ]);
+    const progress = calculateHumanProgress(items, annotations);
+    if (project) await this.putProject({ ...project, status: statusAfterAnnotation(progress), updatedAt: value.updatedAt });
+    return progress;
+  }
+
+  async setProjectStatus(projectId: string, status: ProjectStatus) {
+    const storedProject = await this.get<Project>(STORE_NAMES.projects, projectId);
+    const project = storedProject ? normalizeProject(storedProject) : undefined;
+    if (!project || project.status === "HUMAN_COMPLETE") return;
+    await this.putProject({ ...project, status, updatedAt: new Date().toISOString() });
+  }
+
+  async deleteProject(projectId: string) {
+    const [items, annotations, adjudicated, importRuns] = await Promise.all([
+      this.getAllByIndex<ValidationItem>(STORE_NAMES.validationItems, "by-project", projectId),
+      this.getAllByIndex<Annotation>(STORE_NAMES.annotations, "by-project", projectId),
+      this.getAllByIndex<AdjudicatedAnnotation>(STORE_NAMES.adjudicatedAnnotations, "by-project", projectId),
+      this.getAllByIndex<ImportRun>(STORE_NAMES.importRuns, "by-project", projectId),
+    ]);
+    const artifactKeys = await Promise.all(items.map(async (item) => ({
+      judge: await this.getAllKeysByIndex(STORE_NAMES.judgeArtifacts, "by-item", item.id),
+      reference: await this.getAllKeysByIndex(STORE_NAMES.referenceArtifacts, "by-item", item.id),
+    })));
+    const stores = [
+      STORE_NAMES.projects,
+      STORE_NAMES.validationItems,
+      STORE_NAMES.annotations,
+      STORE_NAMES.adjudicatedAnnotations,
+      STORE_NAMES.judgeArtifacts,
+      STORE_NAMES.referenceArtifacts,
+      STORE_NAMES.importRuns,
+    ];
+    const transaction = this.db.transaction(stores, "readwrite");
+    transaction.objectStore(STORE_NAMES.projects).delete(projectId);
+    for (const item of items) transaction.objectStore(STORE_NAMES.validationItems).delete(item.id);
+    for (const annotation of annotations) transaction.objectStore(STORE_NAMES.annotations).delete(annotation.id);
+    for (const record of adjudicated) transaction.objectStore(STORE_NAMES.adjudicatedAnnotations).delete(record.id);
+    for (const run of importRuns) transaction.objectStore(STORE_NAMES.importRuns).delete(run.id);
+    for (const keys of artifactKeys) {
+      for (const key of keys.judge) transaction.objectStore(STORE_NAMES.judgeArtifacts).delete(key);
+      for (const key of keys.reference) transaction.objectStore(STORE_NAMES.referenceArtifacts).delete(key);
+    }
+    await transactionDone(transaction);
+  }
+
   putBenchmarkPack(value: BenchmarkPack) {
     const stored: StoredBenchmarkPack = {
       key: `${value.id}@${value.version}`,
@@ -114,7 +274,7 @@ class BrowserSafeFlowDatabase implements SafeFlowDatabase {
   }
 
   getAnnotation(id: string) {
-    return this.get<Annotation>(STORE_NAMES.annotations, id);
+    return this.get<Annotation>(STORE_NAMES.annotations, id).then((annotation) => annotation ? normalizeAnnotation(annotation) : undefined);
   }
 }
 

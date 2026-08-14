@@ -6,6 +6,7 @@ import { loadBundledBenchmarkPack } from "../benchmarks/loader";
 import { buildTaxonomyReferenceView } from "../benchmarks/taxonomyReference";
 import type { Annotation, JudgeArtifact, NormalizedTaxonomyAsset, Project, ValidationItem } from "../core/types";
 import { openSafeFlowDatabase, type SafeFlowDatabase } from "../storage/database";
+import { LOCAL_VALIDATOR_ID } from "../core/constants";
 
 const now = "2026-01-01T00:00:00.000Z";
 const project: Project = {
@@ -13,7 +14,7 @@ const project: Project = {
   name: "Synthetic validation study",
   benchmarkPackId: "air-bench-2024",
   benchmarkPackVersion: "0.0.1-skeleton",
-  status: "active",
+  status: "READY",
   createdAt: now,
   updatedAt: now,
 };
@@ -61,10 +62,11 @@ export function MockAnnotationPage() {
     id: `mock-annotation-${caseId}`,
     itemId: item.id,
     projectId: project.id,
-    validatorId: "local-validator",
+    validatorId: LOCAL_VALIDATOR_ID,
     benchmarkPackId: "air-bench-2024",
     status: "draft",
     answers: {},
+    evidenceSpans: [],
     revision: 0,
     createdAt: now,
     updatedAt: now,
@@ -117,15 +119,16 @@ export function MockAnnotationPage() {
   useEffect(() => {
     if (state.value !== "saving") return;
     const savedAt = new Date().toISOString();
+    const submitted = state.intent === "submit" || state.annotation.status === "submitted";
     const persisted: Annotation = {
       ...state.annotation,
-      status: state.finalizeAfterSave ? "finalized" : "draft",
+      status: submitted ? "submitted" : "draft",
       revision: state.annotation.revision + 1,
       updatedAt: savedAt,
-      ...(state.finalizeAfterSave ? { finalizedAt: savedAt } : {}),
+      ...(submitted ? { submittedAt: state.intent === "submit" ? savedAt : state.annotation.submittedAt ?? savedAt } : {}),
     };
     const save = database.current?.putAnnotation(persisted) ?? Promise.resolve();
-    save.then(() => dispatch({ type: "SAVE_SUCCEEDED", savedAt }))
+    save.then(() => dispatch({ type: "SAVE_SUCCEEDED", annotation: persisted }))
       .catch((error: unknown) => dispatch({ type: "SAVE_FAILED", message: error instanceof Error ? error.message : "Local save failed" }));
   }, [state]);
 

@@ -23,7 +23,7 @@ During active human validation, the UI receives only:
 - the selected benchmark pack;
 - the current validator's annotation.
 
-It does not receive judge scores or reasoning, reference labels, or other validators' annotations. These values use separate entity types and IndexedDB object stores. The annotation component has no props for them, and `getBlindedItem()` returns a newly constructed narrow object. No CSS concealment is used.
+It does not receive judge scores or reasoning, reference labels, or other validators' annotations. These values use separate entity types and IndexedDB object stores. Real annotation and review routes call blinded item queries and local-validator-scoped annotation queries; they never join judge or reference stores. The annotation component has no props for hidden values. No CSS concealment is used.
 
 The import pipeline creates `ValidationItem`, `JudgeArtifact`, and `ReferenceArtifact` records separately. Mapped judge reasoning, scores, and reference labels are never copied into validation-item metadata. Unmapped source metadata is persisted with the item for auditability, but `getBlindedItem()` excludes metadata structurally.
 

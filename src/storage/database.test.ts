@@ -35,7 +35,7 @@ describe("local database", () => {
     const name = `test-${crypto.randomUUID()}`;
     const db = await openSafeFlowDatabase(indexedDB, name);
     await db.importProjectBundle({
-      project: { id: "p", name: "project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", status: "active", createdAt: "now", updatedAt: "now" },
+      project: { id: "p", name: "project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", status: "READY", createdAt: "now", updatedAt: "now" },
       items: [{ id: "i", projectId: "p", externalId: "one", prompt: "prompt", response: "response", metadata: {}, createdAt: "now" }],
       judgeArtifacts: [{ id: "j", itemId: "i", judgeId: "imported", score: 0, reasoning: "isolated reasoning", metadata: {}, createdAt: "now" }],
       referenceArtifacts: [{ id: "r", itemId: "i", label: "isolated label", createdAt: "now" }],
@@ -44,6 +44,16 @@ describe("local database", () => {
     const blinded = await db.getBlindedItem("i");
     expect(blinded).toEqual({ id: "i", projectId: "p", externalId: "one", prompt: "prompt", response: "response" });
     expect(JSON.stringify(blinded)).not.toMatch(/isolated reasoning|isolated label/);
+    db.close();
+  });
+
+  it("rejects stale annotation revisions", async () => {
+    const db = await openSafeFlowDatabase(indexedDB, `test-${crypto.randomUUID()}`);
+    await db.putProject({ id: "p", name: "project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", status: "READY", createdAt: "now", updatedAt: "now" });
+    await db.putValidationItem({ id: "i", projectId: "p", prompt: "prompt", response: "response", metadata: {}, createdAt: "now" });
+    const stored = { id: "a", itemId: "i", projectId: "p", validatorId: "local-validator", benchmarkPackId: "air-bench-2024", status: "draft" as const, answers: {}, evidenceSpans: [], revision: 2, createdAt: "now", updatedAt: "now" };
+    await db.putAnnotation(stored);
+    await expect(db.saveAnnotation(stored)).rejects.toThrow(/revision must increase/);
     db.close();
   });
 });

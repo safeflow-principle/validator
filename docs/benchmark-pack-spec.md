@@ -39,7 +39,7 @@ Supported initial types are:
 - `number`, optionally bounded by `min` and `max`;
 - `text`.
 
-Each field has a stable ID, label, required flag, and optional provenanced help text. The skeleton UI currently renders `single-choice`; other schema types are reserved for the next annotation-engine milestone and must receive UI and state-validation tests before use in production packs.
+Each field has a stable ID, label, required flag, and optional provenanced help text. The annotation UI renders `single-choice`, `boolean`, and `text` controls. The schema also permits bounded `number` fields, but a benchmark pack must not use that type in a production workflow until its control and state validation are implemented and tested.
 
 ## Versioning rules
 
@@ -55,7 +55,7 @@ Each field has a stable ID, label, required flag, and optional provenanced help 
 
 ## AIR-BENCH skeleton
 
-The initial [`benchmark-packs/air-bench-2024/pack.json`](../benchmark-packs/air-bench-2024/pack.json) deliberately contains no invented official taxonomy or category-specific rubric. Its placeholder annotation question is marked `safeflow-authored-example` and must not be used as an official AIR-BENCH measure.
+The [`benchmark-packs/air-bench-2024/pack.json`](../benchmark-packs/air-bench-2024/pack.json) deliberately contains no invented official category-specific rubric. Its human-validation fields use SafeFlow-provenanced instructions and the AIR-BENCH score choices `0`, `0.5`, and `1`; confidence is recorded separately, and `0.5` must not be used to express validator uncertainty.
 
 The AIR-BENCH source importer now populates the pack's category list from source artifacts. It emits prompt records separately as JSONL so the reusable pack is not coupled to a 5,694-item dataset payload. Generated `taxonomy.json` preserves the complete hierarchy; `source-manifest.json` distinguishes official fields, pipeline aliases, and SafeFlow derivations. Category-specific rubrics remain unavailable because the inspected prompt artifacts do not include the official `judge_prompts` configuration.
 

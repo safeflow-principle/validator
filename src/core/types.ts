@@ -1,12 +1,13 @@
 export type EntityId = string;
 export type IsoTimestamp = string;
+export type ProjectStatus = "READY" | "VALIDATING" | "REVIEW" | "HUMAN_COMPLETE";
 
 export interface Project {
   id: EntityId;
   name: string;
   benchmarkPackId: string;
   benchmarkPackVersion: string;
-  status: "active" | "archived";
+  status: ProjectStatus;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
 }
@@ -30,19 +31,26 @@ export type BlindedValidationItem = Pick<
 
 export type AnnotationValue = string | number | boolean | null;
 
+export interface EvidenceSpan {
+  start: number;
+  end: number;
+  text: string;
+}
+
 export interface Annotation {
   id: EntityId;
   itemId: EntityId;
   projectId: EntityId;
   validatorId: EntityId;
   benchmarkPackId: string;
-  status: "draft" | "finalized";
+  status: "draft" | "submitted";
   answers: Record<string, AnnotationValue>;
   notes?: string;
+  evidenceSpans: EvidenceSpan[];
   revision: number;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
-  finalizedAt?: IsoTimestamp;
+  submittedAt?: IsoTimestamp;
 }
 
 export interface AdjudicatedAnnotation {
@@ -85,7 +93,30 @@ export interface ImportRun {
   warnings?: string[];
   format?: string;
   mapping?: Record<string, string>;
+  sourceSha256?: string;
   createdAt: IsoTimestamp;
+}
+
+export interface HumanValidationProgress {
+  total: number;
+  unseen: number;
+  drafts: number;
+  submitted: number;
+  flagged: number;
+  lowConfidence: number;
+  skipped: number;
+  percentComplete: number;
+}
+
+export interface ProjectSummary {
+  project: Project;
+  sourceName: string;
+  lastActivityAt: IsoTimestamp;
+  progress: HumanValidationProgress;
+}
+
+export interface ProjectDetail extends ProjectSummary {
+  importRun?: ImportRun;
 }
 
 export type ProvenanceKind =

@@ -14,6 +14,7 @@ export interface BuildImportBundleOptions {
   benchmarkPackId: string;
   benchmarkPackVersion: string;
   sourceName: string;
+  sourceSha256: string;
   format: DatasetFormat;
   mapping: DatasetMapping;
   now?: string;
@@ -33,7 +34,7 @@ export function buildLocalImportBundle(
     name: options.projectName.trim() || options.sourceName,
     benchmarkPackId: options.benchmarkPackId,
     benchmarkPackVersion: options.benchmarkPackVersion,
-    status: "active",
+    status: "READY",
     createdAt: now,
     updatedAt: now,
   };
@@ -49,7 +50,12 @@ export function buildLocalImportBundle(
       prompt: row.prompt,
       response: row.response,
       ...(row.categoryId ? { categoryId: row.categoryId } : {}),
-      metadata: { ...row.metadata, importSourceRow: row.sourceRow },
+      metadata: {
+        ...row.metadata,
+        importSourceRow: row.sourceRow,
+        ...(row.benchmarkPromptId ? { benchmarkPromptId: row.benchmarkPromptId } : {}),
+        fieldProvenance: row.fieldProvenance,
+      },
       createdAt: now,
     });
     if (row.judge) {
@@ -77,6 +83,7 @@ export function buildLocalImportBundle(
     warnings: preflight.issues.filter((issue) => issue.severity === "warning").map((issue) => issue.message),
     format: options.format,
     mapping: Object.fromEntries(Object.entries(options.mapping).filter((entry): entry is [string, string] => Boolean(entry[1]))),
+    sourceSha256: options.sourceSha256,
     createdAt: now,
   };
   return { project, items, judgeArtifacts, referenceArtifacts, importRun };

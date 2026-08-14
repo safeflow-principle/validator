@@ -1,10 +1,12 @@
 import type { AnnotationValue } from "../core/types";
+import type { BenchmarkPromptIndex } from "../benchmarks/promptIndex";
 import type { DatasetMapping, DatasetRow, ImportField, ImportIssue, ImportPreflight, ParsedDataset, PreflightRow } from "./types";
 
 const aliases: Record<ImportField, string[]> = {
   prompt: ["prompt", "question", "input", "user_prompt", "request"],
   response: ["response", "answer", "output", "model_response", "assistant_response"],
-  externalId: ["id", "prompt_id", "item_id", "external_id"],
+  externalId: ["id", "item_id", "external_id"],
+  benchmarkPromptId: ["prompt_id", "benchmark_prompt_id", "airbench_prompt_id"],
   categoryId: ["category_id", "categoryid", "cate_idx", "cate-idx", "intent", "airbench_cate_idx"],
   judgeScore: ["judge_score", "score", "automated_score"],
   judgeReasoning: ["judge_reasoning", "reasoning", "judge_rationale"],
@@ -39,12 +41,13 @@ function mappedValue(row: DatasetRow, mapping: DatasetMapping, field: ImportFiel
 export function preflightDataset(
   dataset: ParsedDataset,
   mapping: DatasetMapping,
-  knownCategoryIds: ReadonlySet<string>,
+  options: { knownCategoryIds: ReadonlySet<string>; promptIndex?: BenchmarkPromptIndex },
 ): ImportPreflight {
   const issues: ImportIssue[] = [...dataset.issues];
-  for (const field of ["prompt", "response"] as const) {
-    if (!mapping[field]) issues.push({ severity: "error", code: "missing-mapping", message: `Map a column to ${field}.`, column: field });
+  if (!mapping.prompt && !mapping.benchmarkPromptId) {
+    issues.push({ severity: "error", code: "missing-mapping", message: "Map a prompt column or an AIR-BENCH prompt ID column.", column: "prompt" });
   }
+  if (!mapping.response) issues.push({ severity: "error", code: "missing-mapping", message: "Map a column to response.", column: "response" });
   for (const [field, column] of Object.entries(mapping)) {
     if (column && !dataset.columns.includes(column)) {
       issues.push({ severity: "error", code: "unknown-column", message: `Mapped column ${column} does not exist.`, column: field });
@@ -56,17 +59,39 @@ export function preflightDataset(
   const rows: PreflightRow[] = [];
   dataset.rows.forEach((source, index) => {
     const rowNumber = index + 1;
-    const prompt = text(mappedValue(source, mapping, "prompt"));
+    const uploadedPrompt = text(mappedValue(source, mapping, "prompt"));
+    const uploadedCategoryId = text(mappedValue(source, mapping, "categoryId"));
+    const benchmarkPromptId = text(mappedValue(source, mapping, "benchmarkPromptId")) || undefined;
+    const canonical = benchmarkPromptId ? options.promptIndex?.get(benchmarkPromptId) : undefined;
+    if (benchmarkPromptId && !canonical) {
+      const sufficientExplicitData = Boolean(uploadedPrompt && uploadedCategoryId);
+      issues.push({
+        severity: sufficientExplicitData ? "warning" : "error",
+        code: "unknown-benchmark-prompt-id",
+        message: sufficientExplicitData
+          ? `Prompt ID ${benchmarkPromptId} is not recognized; uploaded prompt and category values will be used.`
+          : `Prompt ID ${benchmarkPromptId} is not recognized and requires explicit prompt and category values.`,
+        row: rowNumber,
+        column: mapping.benchmarkPromptId,
+      });
+    }
+    if (canonical && uploadedPrompt && uploadedPrompt !== canonical.text.trim()) {
+      issues.push({ severity: "error", code: "canonical-prompt-conflict", message: `Uploaded prompt conflicts with canonical AIR-BENCH prompt ${benchmarkPromptId}.`, row: rowNumber, column: mapping.prompt });
+    }
+    if (canonical && uploadedCategoryId && uploadedCategoryId !== canonical.categoryId) {
+      issues.push({ severity: "error", code: "canonical-category-conflict", message: `Uploaded category ${uploadedCategoryId} conflicts with canonical category ${canonical.categoryId}.`, row: rowNumber, column: mapping.categoryId });
+    }
+    const prompt = uploadedPrompt || canonical?.text.trim() || "";
     const response = text(mappedValue(source, mapping, "response"));
     if (!prompt) issues.push({ severity: "error", code: "missing-prompt", message: "Prompt is empty.", row: rowNumber, column: mapping.prompt });
     if (!response) issues.push({ severity: "error", code: "missing-response", message: "Response is empty.", row: rowNumber, column: mapping.response });
 
-    const externalId = text(mappedValue(source, mapping, "externalId")) || `row-${rowNumber}`;
+    const externalId = text(mappedValue(source, mapping, "externalId")) || benchmarkPromptId || `row-${rowNumber}`;
     if (externalIds.has(externalId)) issues.push({ severity: "error", code: "duplicate-external-id", message: `Duplicate external ID: ${externalId}.`, row: rowNumber, column: mapping.externalId });
     externalIds.add(externalId);
 
-    const categoryId = text(mappedValue(source, mapping, "categoryId")) || undefined;
-    if (categoryId && !knownCategoryIds.has(categoryId)) {
+    const categoryId = uploadedCategoryId || canonical?.categoryId || undefined;
+    if (categoryId && !options.knownCategoryIds.has(categoryId)) {
       issues.push({ severity: "error", code: "unknown-category", message: `Category ${categoryId} is not in the selected benchmark pack.`, row: rowNumber, column: mapping.categoryId });
     }
 
@@ -84,16 +109,23 @@ export function preflightDataset(
     rows.push({
       sourceRow: rowNumber,
       externalId,
+      ...(benchmarkPromptId ? { benchmarkPromptId } : {}),
       prompt,
       response,
       ...(categoryId ? { categoryId } : {}),
       metadata,
+      fieldProvenance: {
+        ...(benchmarkPromptId ? { benchmarkPromptId: "uploaded-source" as const } : {}),
+        ...(prompt ? { prompt: uploadedPrompt ? "uploaded-source" as const : "air-bench-benchmark-asset" as const } : {}),
+        ...(categoryId ? { categoryId: uploadedCategoryId ? "uploaded-source" as const : "air-bench-benchmark-asset" as const } : {}),
+        ...(categoryId ? { taxonomy: "safeflow-derived-mapping" as const } : {}),
+      },
       ...(judgeScore !== undefined || judgeReasoning ? { judge: { score: judgeScore ?? null, ...(judgeReasoning ? { reasoning: judgeReasoning } : {}) } } : {}),
       ...(referenceLabel !== undefined ? { referenceLabel } : {}),
     });
   });
 
-  if (!mapping.categoryId) issues.push({ severity: "warning", code: "uncategorized", message: "No category column is mapped; benchmark reference metadata will be unavailable." });
+  if (rows.some((row) => !row.categoryId)) issues.push({ severity: "warning", code: "uncategorized", message: "Some rows have no category; benchmark reference metadata will be unavailable for those items." });
   const errors = issues.filter((issue) => issue.severity === "error").length;
   const warnings = issues.filter((issue) => issue.severity === "warning").length;
   return {

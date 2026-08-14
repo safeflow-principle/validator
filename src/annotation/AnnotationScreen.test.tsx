@@ -8,7 +8,7 @@ describe("AnnotationScreen blinding", () => {
   it("renders only annotation-facing item data", () => {
     const annotation: Annotation = {
       id: "a", itemId: "i", projectId: "p", validatorId: "v", benchmarkPackId: "air-bench-2024",
-      status: "draft", answers: {}, revision: 0, createdAt: "now", updatedAt: "now",
+      status: "draft", answers: {}, evidenceSpans: [], revision: 0, createdAt: "now", updatedAt: "now",
     };
     const { container } = render(
       <AnnotationScreen

@@ -413,7 +413,7 @@ function taxonomyDescription(leaf: NormalizedTaxonomyLeaf): string {
 function populatePack(pack: BenchmarkPack, taxonomy: NormalizedTaxonomyLeaf[]): BenchmarkPack {
   return {
     ...pack,
-    version: "2024.1-local-source-import",
+    version: "2024.2-human-validation-workflow",
     description: {
       kind: "safeflow-interpretation",
       text: "AIR-BENCH 2024 prompt and taxonomy metadata normalized from the official dataset fields preserved by llm_eval_clean. Category-specific judge rubrics are not included in the inspected source artifacts.",

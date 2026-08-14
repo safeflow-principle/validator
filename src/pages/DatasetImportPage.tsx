@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { loadBundledBenchmarkPack } from "../benchmarks/loader";
+import { airBenchPromptIndex } from "../benchmarks/airBenchAssets";
 import { buildLocalImportBundle } from "../import/buildBundle";
+import { sha256Hex } from "../import/hash";
 import { parseDatasetText } from "../import/parser";
 import { preflightDataset, suggestMapping } from "../import/preflight";
 import type { DatasetMapping, ImportField, ParsedDataset } from "../import/types";
@@ -9,9 +11,10 @@ import { openSafeFlowDatabase } from "../storage/database";
 const pack = loadBundledBenchmarkPack("air-bench-2024");
 const knownCategories = new Set(pack.categories.map((category) => category.id));
 const mappingFields: Array<{ id: ImportField; label: string; required?: boolean; sensitive?: boolean }> = [
-  { id: "prompt", label: "Prompt", required: true },
+  { id: "prompt", label: "Prompt (or use a recognized AIR-BENCH prompt ID)" },
   { id: "response", label: "Assistant response", required: true },
   { id: "externalId", label: "External item ID" },
+  { id: "benchmarkPromptId", label: "AIR-BENCH prompt ID (or map Prompt)" },
   { id: "categoryId", label: "AIR-BENCH category ID" },
   { id: "judgeScore", label: "Automated-judge score", sensitive: true },
   { id: "judgeReasoning", label: "Automated-judge reasoning", sensitive: true },
@@ -22,11 +25,12 @@ export function DatasetImportPage() {
   const [dataset, setDataset] = useState<ParsedDataset>();
   const [sourceName, setSourceName] = useState("");
   const [projectName, setProjectName] = useState("Imported validation project");
+  const [sourceSha256, setSourceSha256] = useState("");
   const [mapping, setMapping] = useState<DatasetMapping>({});
   const [fileError, setFileError] = useState<string>();
   const [status, setStatus] = useState<{ kind: "idle" | "saving" | "complete" | "error"; message?: string }>({ kind: "idle" });
   const preflight = useMemo(
-    () => dataset ? preflightDataset(dataset, mapping, knownCategories) : undefined,
+    () => dataset ? preflightDataset(dataset, mapping, { knownCategoryIds: knownCategories, promptIndex: airBenchPromptIndex }) : undefined,
     [dataset, mapping],
   );
 
@@ -35,8 +39,13 @@ export function DatasetImportPage() {
     setFileError(undefined);
     setStatus({ kind: "idle" });
     try {
-      const parsed = parseDatasetText(file.name, await file.text());
+      const contents = await file.text();
+      const [parsed, sourceHash] = await Promise.all([
+        Promise.resolve(parseDatasetText(file.name, contents)),
+        sha256Hex(contents),
+      ]);
       setSourceName(file.name);
+      setSourceSha256(sourceHash);
       setDataset(parsed);
       setMapping(suggestMapping(parsed.columns));
     } catch (error) {
@@ -53,6 +62,7 @@ export function DatasetImportPage() {
         benchmarkPackId: pack.id,
         benchmarkPackVersion: pack.version,
         sourceName,
+        sourceSha256,
         format: dataset.format,
         mapping,
       });
@@ -63,7 +73,7 @@ export function DatasetImportPage() {
       } finally {
         database.close();
       }
-      setStatus({ kind: "complete", message: `Imported ${bundle.items.length} items into this browser as project ${bundle.project.id}.` });
+      window.location.assign(`/projects/${bundle.project.id}`);
     } catch (error) {
       setStatus({ kind: "error", message: error instanceof Error ? error.message : "Local import failed." });
     }

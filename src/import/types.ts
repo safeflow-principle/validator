@@ -5,6 +5,7 @@ export type ImportField =
   | "prompt"
   | "response"
   | "externalId"
+  | "benchmarkPromptId"
   | "categoryId"
   | "judgeScore"
   | "judgeReasoning"
@@ -12,6 +13,14 @@ export type ImportField =
 
 export type DatasetRow = Record<string, unknown>;
 export type DatasetMapping = Partial<Record<ImportField, string>>;
+export type ImportedFieldOrigin = "uploaded-source" | "air-bench-benchmark-asset" | "safeflow-derived-mapping";
+
+export interface BenchmarkPromptHydrationRecord {
+  promptId: string;
+  canonicalId: string;
+  text: string;
+  categoryId: string;
+}
 
 export interface ImportIssue {
   severity: "error" | "warning";
@@ -31,10 +40,12 @@ export interface ParsedDataset {
 export interface PreflightRow {
   sourceRow: number;
   externalId: string;
+  benchmarkPromptId?: string;
   prompt: string;
   response: string;
   categoryId?: string;
   metadata: Record<string, unknown>;
+  fieldProvenance: Partial<Record<"benchmarkPromptId" | "prompt" | "categoryId" | "taxonomy", ImportedFieldOrigin>>;
   judge?: { score: AnnotationValue; reasoning?: string };
   referenceLabel?: AnnotationValue;
 }

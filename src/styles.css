@@ -98,15 +98,63 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .secondary-button { border-color: #bdc7c0; background: #fff; color: #33433c; }
 .primary-button, .primary-link { background: #225f46; color: #fff; }
 .secondary-link { display: inline-block; margin-left: 12px; color: #225f46; font-weight: 700; }
+.tertiary-link { display: inline-block; margin-left: 18px; color: #617068; font-size: 0.85rem; }
 .finalize-note { text-align: center; color: #78827c; font-size: 0.75rem; }
 .error-message { padding: 10px; color: #8b2c25; background: #fff1ef; border-radius: 5px; font-size: 0.85rem; }
 .loading-screen { min-height: 100vh; display: grid; place-items: center; color: #5c6963; }
+.progress-row progress { display: block; width: min(260px, 46vw); height: 6px; margin-top: 8px; }
+.response-block mark { padding: 2px 0; background: #ffeb9c; color: inherit; }
+.evidence-button { min-height: 36px; margin-top: 16px; padding: 0 12px; border-color: #b9c7be; background: #fff; color: #315b48; font-size: 0.78rem; }
+.evidence-list { display: grid; gap: 8px; padding-left: 20px; }
+.evidence-list li { padding: 9px; border: 1px solid #d8e0da; border-radius: 5px; background: #fff; font-size: 0.78rem; }
+.evidence-list small { display: block; margin: 4px 0; color: #6b7770; }
+.evidence-list button { min-height: 28px; padding: 0 8px; border-color: #cad3cd; background: #fff; font-size: 0.7rem; }
+.flag-field { display: flex; gap: 10px; align-items: start; margin-top: 20px; padding: 14px; border: 1px solid #d8ded9; border-radius: 7px; }
+.flag-field input { margin-top: 3px; accent-color: #8a5e25; }
+.flag-field small { display: block; margin-top: 3px; color: #6a766f; font-weight: 400; }
+.submitted-badge { padding: 8px 10px; border-radius: 4px; background: #eaf5ee; color: #2c6948; font-size: 0.75rem; font-weight: 700; }
+.annotation-nav-actions { display: grid; grid-template-columns: 0.7fr 1.1fr 1.2fr; gap: 8px; margin-top: 24px; }
 
 .home-shell { max-width: 760px; margin: 12vh auto; padding: 40px; }
 .home-shell > p:not(.eyebrow) { font-size: 1.2rem; line-height: 1.6; color: #52605a; }
 .primary-link { display: inline-block; margin: 18px 0 36px; padding: 13px 18px; border-radius: 5px; text-decoration: none; font-weight: 700; }
 .home-shell details { border-top: 1px solid #d1d8d2; padding-top: 20px; }
 .home-shell li { margin: 9px 0; color: #53615a; }
+
+.project-shell { width: min(1120px, 92vw); margin: 0 auto 80px; padding-top: 34px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 58px; }
+.page-header .compact { margin: 0; padding: 9px 13px; }
+.page-intro { color: #5d6a63; }
+.empty-state { margin-top: 36px; padding: 38px; border: 1px solid #d7ddd7; border-radius: 8px; background: #fff; text-align: center; }
+.project-list, .review-list { display: grid; gap: 14px; margin-top: 30px; }
+.project-card, .review-card, .detail-card { padding: 24px; border: 1px solid #d5ddd7; border-radius: 8px; background: #fff; box-shadow: 0 8px 26px rgba(35, 52, 45, 0.04); }
+.project-card h2, .review-card h2, .detail-card h2 { margin: 7px 0; font-family: Georgia, serif; }
+.project-card > div:first-child p { margin: 0; color: #617068; }
+.status-pill { display: inline-block; padding: 4px 7px; border-radius: 4px; background: #e6eee9; color: #315c48; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; }
+.project-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 20px 0 12px; }
+.project-stats div { padding: 10px; border-radius: 5px; background: #f2f5f2; }
+.project-stats dt, .detail-card dt, .review-card dt { color: #6a766f; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.project-stats dd { margin: 3px 0 0; font-size: 1.25rem; font-weight: 750; }
+.project-card progress, .detail-card progress { width: 100%; }
+.last-activity { color: #78827c; font-size: 0.75rem; }
+.card-actions, .page-actions { display: flex; gap: 9px; align-items: center; margin-top: 17px; }
+.button-link { margin: 0; padding: 10px 13px; border: 1px solid #bfcac2; border-radius: 5px; text-decoration: none; }
+.primary-link.button-link { border-color: transparent; }
+.danger-button { margin-left: auto; padding: 0 13px; border-color: #d9bcb8; background: #fff; color: #8b312b; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 30px; }
+.detail-card dl { display: grid; gap: 10px; }
+.detail-card dl div { padding-bottom: 10px; border-bottom: 1px solid #e3e7e3; }
+.detail-card dd { margin: 3px 0 0; }
+.hash-value { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: 0.76rem; }
+.progress-breakdown { grid-template-columns: 1fr 1fr; }
+.progress-breakdown dd { font-size: 1.15rem; font-weight: 750; }
+.completion-banner { margin: 22px 0; padding: 20px 22px; border-left: 4px solid #2d7554; background: #edf7f1; }
+.completion-banner h2 { margin: 0 0 6px; font-family: Georgia, serif; }
+.filter-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 25px 0; }
+.filter-row button { min-height: 34px; padding: 0 10px; border-color: #c5d0c8; background: #fff; font-size: 0.74rem; }
+.filter-row button[aria-pressed="true"] { border-color: #2c684c; background: #eaf4ee; color: #22583f; }
+.review-card dl { display: grid; grid-template-columns: 0.6fr 0.8fr 2fr 2fr 0.7fr; gap: 10px; }
+.review-card dd { margin: 4px 0 0; overflow-wrap: anywhere; }
 
 .import-shell { width: min(900px, 92vw); margin: 54px auto 80px; }
 .import-shell > .wordmark { display: inline-block; margin-bottom: 48px; }
@@ -140,9 +188,13 @@ select, .project-name-field input { width: 100%; min-height: 42px; padding: 8px 
   .product-name { display: none; }
   .item-panel, .rubric-panel { padding: 28px 22px; }
   .actions { grid-template-columns: 1fr; }
+  .annotation-nav-actions { grid-template-columns: 1fr; }
   .progress-row { align-items: start; }
   .mock-case-nav { justify-content: start; overflow-x: auto; }
   .mock-case-nav a { white-space: nowrap; }
   .mapping-grid { grid-template-columns: 1fr; }
   .preflight-summary { grid-template-columns: 1fr 1fr; }
+  .project-stats, .detail-grid, .review-card dl { grid-template-columns: 1fr; }
+  .card-actions { flex-wrap: wrap; }
+  .danger-button { margin-left: 0; }
 }

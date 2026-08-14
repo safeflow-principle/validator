@@ -2,7 +2,7 @@
 
 ## Status
 
-This document describes the initial skeleton, not the full MVP. The governing principle is:
+This document describes the local-first workflow through human-validation completion, before project finalization or judge comparison. The governing principle is:
 
 > annotation engine + benchmark pack
 
@@ -24,23 +24,18 @@ validator/
 ├── schemas/
 │   └── benchmark-pack.schema.json
 ├── src/
-│   ├── annotation/
-│   │   ├── AnnotationScreen.tsx
-│   │   ├── AnnotationScreen.test.tsx
-│   │   ├── stateMachine.ts
-│   │   └── stateMachine.test.ts
+│   ├── annotation/               # blinded UI, evidence offsets, state machine
 │   ├── benchmarks/
+│   │   ├── generated/            # normalized AIR-BENCH prompt/taxonomy assets
 │   │   ├── loader.ts
-│   │   └── loader.test.ts
-│   ├── core/
-│   │   └── types.ts
-│   ├── pages/
-│   │   └── MockAnnotationPage.tsx
-│   ├── storage/
-│   │   ├── database.ts
-│   │   ├── database.test.ts
-│   │   └── schema.ts
-│   ├── test/setup.ts
+│   │   ├── promptIndex.ts
+│   │   └── taxonomyReference.ts
+│   ├── core/                     # domain interfaces and local validator identity
+│   ├── import/                   # parsing, hydration, preflight, entity builder
+│   ├── pages/                    # project, annotation, review, import routes
+│   ├── projects/                 # progress and deterministic resume logic
+│   ├── storage/                  # IndexedDB schema and repository
+│   ├── test/                     # shared test setup
 │   ├── App.tsx
 │   ├── main.tsx
 │   ├── routes.ts
@@ -51,9 +46,9 @@ validator/
 └── vite.config.ts
 ```
 
-Milestone 2 begins with a bounded `src/import` module. Future work should add `src/export` and `src/analysis` without coupling those concerns to annotation components.
+The current milestone includes a bounded `src/import` module and the complete human-validation workflow. Future work should add `src/export` and `src/analysis` without coupling those concerns to annotation components.
 
-The first source adapter is the read-only AIR-BENCH CLI in `scripts/import-airbench.ts`. It validates two `llm_eval_clean` exports against exact observed schemas, cross-checks them row-for-row, and deterministically emits `prompts.jsonl`, `taxonomy.json`, and `source-manifest.json`. Generated prompt data remains separate from the reusable pack definition and is not bundled into the annotation UI.
+The first source adapter is the read-only AIR-BENCH CLI in `scripts/import-airbench.ts`. It validates two `llm_eval_clean` exports against exact observed schemas, cross-checks them row-for-row, and deterministically emits `prompts.jsonl`, `taxonomy.json`, and `source-manifest.json`. Generated prompt data remains separate from the reusable pack definition. The normalized prompt index is currently bundled as a static local asset so imports can hydrate recognized prompt IDs without a network or server dependency.
 
 AIR-BENCH taxonomy assets maintain two parallel representations: the exact dataset encoding and the official conceptual hierarchy. Most leaves reference one conceptual Level 3 node. Source encodings `3940` and `4142` remain unchanged but carry composite relationships for `Discriminatory Activities × Protected Characteristics` and `Unauthorized Privacy Violations × Types of Sensitive Data`. Reference UI consumes the conceptual relationship while audit/export paths retain the source encoding.
 
@@ -62,7 +57,7 @@ AIR-BENCH taxonomy assets maintain two parallel representations: the exact datas
 | Boundary | Responsibility | Must not know |
 |---|---|---|
 | Annotation UI | Render a `BlindedValidationItem`, pack-defined fields, and annotation workflow | Judge artifacts, reference artifacts, other annotations |
-| Annotation state machine | Pure transitions, required-field validation, save/finalize lifecycle | IndexedDB, React, benchmark-specific labels |
+| Annotation state machine | Pure transitions, required-field validation, draft/submission lifecycle, evidence edits, save intents | IndexedDB, React, benchmark-specific labels |
 | Benchmark loader | Validate and clone versioned JSON packs | Project or evaluation data |
 | Local storage | Persist entities and atomic import bundles in browser IndexedDB | UI layout or benchmark semantics |
 | Dataset import | Parse local files, map columns, preflight records, and construct separated entities | React layout, annotation state, network services |
@@ -104,24 +99,34 @@ Native IndexedDB is used to minimize runtime surface and keep the storage bounda
 
 The implemented import path is `local File → parser → explicit column mapping → preflight → entity builder → one IndexedDB transaction`. CSV, JSON, JSONL, and NDJSON are accepted. Parsing and preflight occur entirely in browser memory; persistence is disabled until preflight has no errors.
 
-Required mappings are prompt and response. External ID, category ID, automated-judge score/reasoning, and reference label are optional explicit mappings. Mapped judge and reference values are removed from item metadata and written to their isolated entity stores. Unmapped columns remain item metadata, but annotation-facing retrieval drops all metadata.
+Required input is a response plus either an explicit prompt or a recognized benchmark prompt ID. External ID, category ID, benchmark prompt ID, automated-judge score/reasoning, and reference label are explicit mappings. Mapped judge and reference values are removed from item metadata and written to their isolated entity stores. Unmapped columns remain item metadata, but annotation-facing retrieval drops all metadata.
+
+Recognized AIR-BENCH prompt identifiers hydrate missing canonical prompt text and category ID from the generated prompt index. Explicit uploaded values always win semantically: if they conflict with canonical data, preflight blocks the import rather than overwriting either value. Item metadata records field origins as uploaded source, AIR-BENCH benchmark asset, or SafeFlow-derived mapping.
 
 Current preflight detects malformed input, missing mappings/content, CSV shape errors, duplicate external IDs, unknown benchmark categories, and non-scalar judge/reference values. It reports artifact counts before import. Large-file streaming, configurable coercion, saved mapping templates, cancellation, and recovery are not implemented yet.
 
 ## Annotation state machine
 
-States are `loading`, `editing`, `saving`, and `finalized`.
+States are `loading`, `editing`, `saving`, and `save-error`.
 
 ```text
 loading --LOADED--> editing
-editing --ANSWER/NOTES_CHANGED--> editing(dirty)
-editing --SAVE_REQUESTED--> saving --SAVE_SUCCEEDED--> editing(clean)
-editing --FINALIZE_REQUESTED + valid--> saving --SAVE_SUCCEEDED--> finalized
-saving --SAVE_FAILED--> editing(dirty, error)
-finalized --any event--> finalized
+editing --ANSWER/EVIDENCE_CHANGED--> editing(dirty,draft)
+editing --autosave/navigation--> saving --SAVE_SUCCEEDED--> editing(clean)
+editing --SUBMIT_REQUESTED + valid--> saving(submit) --SAVE_SUCCEEDED--> editing(clean,submitted)
+saving --SAVE_FAILED--> save-error --edit/retry--> editing/saving
+submitted --edit--> draft
 ```
 
-Finalization validates required fields from the active pack. A finalized annotation is immutable in this skeleton. Reopening or superseding a final annotation requires a future audited workflow; silently editing it is intentionally unsupported.
+Submission validates score, confidence, and reasoning from the active pack. Submitted annotations count toward human progress but remain editable until the later project-finalization milestone. Every successful persistence increments the annotation revision; stale revisions are rejected.
+
+Autosave persists score, confidence, reasoning, evidence spans, and review flags. The UI reports `Saving…` while the IndexedDB operation is pending and `Saved locally` only after it resolves.
+
+## Resume and project status
+
+Items are sorted by imported source-row order. A route without an explicit item first resumes the earliest draft, otherwise the first unsubmitted item, and routes to review if all items are submitted. Resume state is derived from IndexedDB records, not route or transient React state.
+
+Project transitions are `READY → VALIDATING ↔ REVIEW → HUMAN_COMPLETE`. Editing a submitted annotation returns it to draft and moves a human-complete project back to `VALIDATING`. There is deliberately no `COMPLETE` state yet.
 
 ## Route map
 
@@ -129,17 +134,18 @@ Finalization validates required fields from the active pack. A finalized annotat
 |---|---|---|
 | `/` | Local welcome and entry point | Implemented |
 | `/mock/annotation` | Synthetic blinded annotation | Implemented |
-| `/projects` | Local projects | Planned MVP |
-| `/projects/:projectId` | Local project and item status | Planned MVP |
-| `/projects/:projectId/annotate/:itemId` | Real blinded annotation workspace | Planned MVP |
+| `/projects` | Local projects, progress, resume, deletion | Implemented |
+| `/projects/:projectId` | Project provenance and human-validation progress | Implemented |
+| `/projects/:projectId/annotate` | Real blinded annotation workspace | Implemented |
+| `/projects/:projectId/review` | Human-only review and filters | Implemented |
 | `/settings/data` | Local dataset import, mapping, and preflight | Milestone 2 implemented slice |
 
-The skeleton uses a minimal pathname switch because only two routes are active. A router should be introduced when real parameterized routes are implemented, not before.
+The application still uses a small pathname parser. A routing dependency remains unnecessary for this bounded route set.
 
 ## Auditability
 
 - All domain records have stable IDs and timestamps.
-- Annotations have a monotonic revision and explicit finalization timestamp.
+- Annotations have a monotonic revision and explicit submission timestamp.
 - Benchmark pack identity and version are recorded on projects and annotations.
 - Pack prose carries field-level provenance.
 - Future mutation history should be append-only; it is not implemented in this milestone.
@@ -148,7 +154,7 @@ The skeleton uses a minimal pathname switch because only two routes are active. 
 
 - The supplied implementation specification does not define a detailed Milestone 2 file contract. The first import slice therefore accepts record-oriented CSV/JSON/JSONL, requires explicit prompt/response mapping, and favors blocking ambiguous category IDs over silently coercing them.
 - Official AIR-BENCH judge prompts exist upstream. The reference panel includes only a cited SafeFlow paraphrase of their scoring rules; category-specific prompt text is not bundled, and the panel explicitly marks that rubric unavailable.
-- “Finalized” is treated as immutable because this best preserves auditability. A correction/supersession model is deferred.
+- Item submission is intentionally editable and distinct from project finalization. Full append-only revision history and correction/supersession records are deferred; the current repository enforces monotonic revision numbers.
 - A single local validator is represented by a stable local ID. No account or identity proof is implied.
 - “Remain local to the browser” means IndexedDB is authoritative for the MVP. No service worker, sync, server endpoint, or remote backup is included.
 - Adjudication is represented in the schema but has no UI or workflow in this milestone.

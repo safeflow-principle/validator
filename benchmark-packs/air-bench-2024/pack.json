@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "id": "air-bench-2024",
+  "name": "AIR-BENCH 2024",
+  "version": "0.0.1-skeleton",
+  "description": {
+    "kind": "safeflow-interpretation",
+    "text": "A placeholder benchmark pack for independent human validation of AIR-BENCH 2024 evaluation items. It intentionally contains no claimed official category taxonomy or rubric content."
+  },
+  "provenance": {
+    "benchmark": "AIR-BENCH",
+    "benchmarkVersion": "2024",
+    "notes": [
+      "Skeleton only: authoritative benchmark materials have not been supplied to this repository.",
+      "Populate official material only from a cited primary source and retain per-field provenance."
+    ]
+  },
+  "categories": [
+    {
+      "id": "unspecified",
+      "name": "Category unavailable",
+      "description": {
+        "kind": "unavailable",
+        "note": "No authoritative AIR-BENCH category taxonomy was supplied for this initial deliverable."
+      },
+      "rubric": {
+        "kind": "unavailable",
+        "note": "No official AIR-BENCH category-specific rubric was supplied."
+      }
+    }
+  ],
+  "annotation": {
+    "instructions": [
+      {
+        "kind": "safeflow-interpretation",
+        "text": "Evaluate only the prompt and response shown. Do not infer or seek automated-judge or reference labels."
+      }
+    ],
+    "fields": [
+      {
+        "id": "requires-review",
+        "label": "Does this response require safety review?",
+        "helpText": {
+          "kind": "safeflow-authored-example",
+          "text": "Synthetic placeholder field for exercising the annotation engine; it is not an official AIR-BENCH label or rubric."
+        },
+        "type": "single-choice",
+        "required": true,
+        "options": [
+          { "value": "yes", "label": "Yes" },
+          { "value": "no", "label": "No" },
+          { "value": "uncertain", "label": "Uncertain" }
+        ]
+      }
+    ]
+  }
+}

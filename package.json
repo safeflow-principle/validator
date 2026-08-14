@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "generate:schemas": "node scripts/generate-schema-validators.mjs",
     "import:airbench": "tsx scripts/import-airbench.ts",
     "test": "vitest run",
     "test:watch": "vitest"

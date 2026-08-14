@@ -1,10 +1,30 @@
-import { MockAnnotationPage } from "./pages/MockAnnotationPage";
-import { DatasetImportPage } from "./pages/DatasetImportPage";
-import { ProjectAnnotationPage } from "./pages/ProjectAnnotationPage";
-import { ProjectDetailPage } from "./pages/ProjectDetailPage";
-import { ProjectReviewPage } from "./pages/ProjectReviewPage";
-import { ProjectsPage } from "./pages/ProjectsPage";
+import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
 import { ROUTES } from "./routes";
+
+const MockAnnotationPage = lazy(() => import("./pages/MockAnnotationPage").then((module) => ({ default: module.MockAnnotationPage })));
+const DatasetImportPage = lazy(() => import("./pages/DatasetImportPage").then((module) => ({ default: module.DatasetImportPage })));
+const ProjectAnnotationPage = lazy(() => import("./pages/ProjectAnnotationPage").then((module) => ({ default: module.ProjectAnnotationPage })));
+const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage").then((module) => ({ default: module.ProjectDetailPage })));
+const ProjectReviewPage = lazy(() => import("./pages/ProjectReviewPage").then((module) => ({ default: module.ProjectReviewPage })));
+const ProjectsPage = lazy(() => import("./pages/ProjectsPage").then((module) => ({ default: module.ProjectsPage })));
+
+class RouteErrorBoundary extends Component<{ children: ReactNode }, { error?: string }> {
+  state: { error?: string } = {};
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error instanceof Error ? error.message : "The local page could not be opened." };
+  }
+  componentDidCatch(error: unknown, info: ErrorInfo) {
+    console.error("SafeFlow route failed to render", error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) return <main className="project-shell"><h1>Could not open this local page</h1><p className="error-message">{this.state.error}</p><a href="/">Return home</a></main>;
+    return this.props.children;
+  }
+}
+
+function RoutedPage({ children }: { children: ReactNode }) {
+  return <RouteErrorBoundary><Suspense fallback={<main className="loading-screen"><p>Opening local workspace…</p></main>}>{children}</Suspense></RouteErrorBoundary>;
+}
 
 function HomePage() {
   return (
@@ -25,14 +45,14 @@ function HomePage() {
 
 export function App() {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
-  if (path === "/mock/annotation") return <MockAnnotationPage />;
-  if (path === "/settings/data") return <DatasetImportPage />;
-  if (path === "/projects") return <ProjectsPage />;
+  if (path === "/mock/annotation") return <RoutedPage><MockAnnotationPage /></RoutedPage>;
+  if (path === "/settings/data") return <RoutedPage><DatasetImportPage /></RoutedPage>;
+  if (path === "/projects") return <RoutedPage><ProjectsPage /></RoutedPage>;
   const review = path.match(/^\/projects\/([^/]+)\/review$/);
-  if (review) return <ProjectReviewPage projectId={decodeURIComponent(review[1])} />;
+  if (review) return <RoutedPage><ProjectReviewPage projectId={decodeURIComponent(review[1])} /></RoutedPage>;
   const annotation = path.match(/^\/projects\/([^/]+)\/annotate$/);
-  if (annotation) return <ProjectAnnotationPage projectId={decodeURIComponent(annotation[1])} />;
+  if (annotation) return <RoutedPage><ProjectAnnotationPage projectId={decodeURIComponent(annotation[1])} /></RoutedPage>;
   const project = path.match(/^\/projects\/([^/]+)$/);
-  if (project) return <ProjectDetailPage projectId={decodeURIComponent(project[1])} />;
+  if (project) return <RoutedPage><ProjectDetailPage projectId={decodeURIComponent(project[1])} /></RoutedPage>;
   return <HomePage />;
 }

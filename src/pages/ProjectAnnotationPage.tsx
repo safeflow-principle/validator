@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { AnnotationScreen } from "../annotation/AnnotationScreen";
 import { annotationTransition, initialAnnotationState } from "../annotation/stateMachine";
-import { airBenchTaxonomy } from "../benchmarks/airBenchAssets";
+import { airBenchTaxonomy } from "../benchmarks/airBenchTaxonomy";
 import { loadBundledBenchmarkPack } from "../benchmarks/loader";
 import { buildTaxonomyReferenceView } from "../benchmarks/taxonomyReference";
 import type { Annotation, BlindedValidationItem, ProjectDetail } from "../core/types";

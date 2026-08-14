@@ -1,7 +1,6 @@
-import Ajv2020 from "ajv/dist/2020.js";
 import type { BenchmarkPack } from "../core/types";
-import schema from "../../schemas/benchmark-pack.schema.json";
 import airBenchSkeleton from "../../benchmark-packs/air-bench-2024/pack.json";
+import { validateBenchmarkPack } from "../generated/schemaValidators.js";
 
 export class BenchmarkPackValidationError extends Error {
   constructor(public readonly details: string[]) {
@@ -10,13 +9,10 @@ export class BenchmarkPackValidationError extends Error {
   }
 }
 
-const ajv = new Ajv2020({ allErrors: true, strict: true, formats: { uri: true } });
-const validate = ajv.compile(schema);
-
 export function parseBenchmarkPack(value: unknown): BenchmarkPack {
-  if (!validate(value)) {
+  if (!validateBenchmarkPack(value)) {
     throw new BenchmarkPackValidationError(
-      (validate.errors ?? []).map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`),
+      (validateBenchmarkPack.errors ?? []).map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`),
     );
   }
   return structuredClone(value) as unknown as BenchmarkPack;

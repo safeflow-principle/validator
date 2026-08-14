@@ -1,11 +1,9 @@
-import Ajv2020 from "ajv/dist/2020.js";
-import benchmarkPackSchema from "../../schemas/benchmark-pack.schema.json";
-import backupSchema from "../../schemas/safeflow-project-backup.schema.json";
 import { createEvidenceSpan } from "../annotation/evidence";
 import { LOCAL_VALIDATOR_ID } from "../core/constants";
 import { calculateHumanProgress } from "../projects/progress";
 import type { SafeFlowDatabase } from "../storage/database";
 import type { ProjectArchiveRecords, SafeFlowProjectBackup } from "./types";
+import { validateSafeFlowProjectBackup } from "../generated/schemaValidators.js";
 
 export class SafeFlowBackupValidationError extends Error {
   constructor(public readonly details: string[]) {
@@ -13,10 +11,6 @@ export class SafeFlowBackupValidationError extends Error {
     this.name = "SafeFlowBackupValidationError";
   }
 }
-
-const ajv = new Ajv2020({ allErrors: true, strict: true, formats: { uri: true } });
-ajv.addSchema(benchmarkPackSchema);
-const validateBackup = ajv.compile(backupSchema);
 
 function assertUnique(values: readonly string[], label: string, errors: string[]) {
   if (new Set(values).size !== values.length) errors.push(`${label} IDs must be unique.`);
@@ -71,9 +65,9 @@ function validateRelationships(backup: SafeFlowProjectBackup): string[] {
 }
 
 export function parseSafeFlowProjectBackup(value: unknown): SafeFlowProjectBackup {
-  if (!validateBackup(value)) {
+  if (!validateSafeFlowProjectBackup(value)) {
     throw new SafeFlowBackupValidationError(
-      (validateBackup.errors ?? []).map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`),
+      (validateSafeFlowProjectBackup.errors ?? []).map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`),
     );
   }
   const backup = structuredClone(value) as unknown as SafeFlowProjectBackup;

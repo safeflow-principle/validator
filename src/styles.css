@@ -184,6 +184,76 @@ select, .project-name-field input { width: 100%; min-height: 42px; padding: 8px 
 .project-name-field { margin-bottom: 16px; }
 .import-button { padding: 0 18px; }
 
+.training-shell { width: min(1080px, 92vw); margin: 0 auto 80px; padding-top: 34px; }
+.training-shell h1 { max-width: 780px; font-family: Georgia, serif; font-size: clamp(2.2rem, 5vw, 4rem); }
+.training-lead { max-width: 700px; color: #53615a; font-size: 1.15rem; line-height: 1.6; }
+.training-module-card { margin-top: 34px; padding: 28px; border: 1px solid #d3ddd6; border-radius: 10px; background: #fff; box-shadow: 0 10px 30px rgba(35, 52, 45, .05); }
+.training-module-card h2 { margin: 12px 0 4px; font-family: Georgia, serif; font-size: 2rem; }
+.training-module-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 24px 0; }
+.training-module-stats div { padding: 13px; border-radius: 6px; background: #f0f5f1; }
+.training-module-stats dt { color: #68746e; font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+.training-module-stats dd { margin: 5px 0 0; font-size: 1.1rem; font-weight: 750; }
+.practice-badge, .practice-status { display: inline-block; padding: 5px 8px; border-radius: 4px; background: #e8f0ff; color: #31558b; font-size: .7rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.scope-distinction { margin-top: 38px; }
+.scope-distinction dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.scope-distinction div { padding: 18px; border: 1px solid #d9e0da; border-radius: 7px; background: #fff; }
+.scope-distinction dt { font-weight: 800; }
+.scope-distinction dd { margin: 6px 0 0; color: #5d6a63; }
+.training-intro-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 16px; margin-top: 30px; }
+.training-intro-grid article, .training-example, .curriculum-list, .category-practice { padding: 24px; border: 1px solid #d5ddd7; border-radius: 8px; background: #fff; }
+.score-primer { display: grid; gap: 11px; }
+.score-primer div { padding-bottom: 11px; border-bottom: 1px solid #e2e7e3; }
+.score-primer dt { font-weight: 800; }
+.score-primer dd { margin: 4px 0 0; color: #58665f; }
+.critical-reminder { margin: 18px 0; padding: 18px 20px; border-left: 5px solid #c88921; background: #fff7e7; font-size: 1.05rem; }
+.training-example { margin: 18px 0; }
+.training-example blockquote { margin-left: 0; padding: 15px 18px; border-left: 3px solid #789d88; background: #f2f6f3; }
+.curriculum-list { margin-top: 18px; }
+.curriculum-list article { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e1e6e2; }
+.curriculum-list article > span { display: grid; flex: 0 0 32px; height: 32px; place-items: center; border-radius: 50%; background: #e6f0ea; color: #2e6249; font-weight: 800; }
+.curriculum-list h3, .curriculum-list p { margin: 0 0 4px; }
+.training-start { width: 100%; margin: 18px 0; }
+.category-practice > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.category-practice button { padding: 9px 12px; border-color: #bfcac2; background: #fff; }
+.category-practice small { display: block; color: #738079; }
+.training-practice-shell .response-block mark { background: #ffe6a6; }
+.training-answer-panel .reference-drawer { margin-bottom: 18px; }
+.compact-choices { grid-template-columns: repeat(3, 1fr); }
+.training-reminder { padding: 10px 12px; border-radius: 5px; background: #fff7e7; color: #624a25; font-size: .8rem; }
+.training-check { width: 100%; margin-top: 16px; }
+.decisive-evidence { margin-top: 18px; padding: 17px; border: 1px solid #e0c77d; border-radius: 6px; background: #fff9e9; }
+.decisive-evidence h2 { margin-top: 0; font-size: 1rem; }
+.decisive-evidence blockquote { margin: 8px 0; font-weight: 700; }
+.training-feedback { display: grid; gap: 15px; }
+.training-feedback > section, .training-provenance { padding: 16px; border: 1px solid #dae1dc; border-radius: 7px; background: #fff; }
+.feedback-result.correct { border-color: #9bc6aa; background: #edf8f1; }
+.feedback-result.not-quite { border-color: #dcc18a; background: #fff8e9; }
+.training-feedback h3 { margin: 0 0 8px; font-family: Georgia, serif; }
+.option-feedback { display: grid; gap: 8px; }
+.option-feedback article { padding: 10px; border-radius: 5px; background: #f3f6f4; }
+.option-feedback h4, .option-feedback p { margin: 0 0 5px; }
+.common-trap { border-left: 4px solid #c98a28 !important; }
+.applicable-rule small { display: block; margin-top: 8px; color: #6b7770; }
+.training-provenance dl { display: grid; gap: 7px; }
+.training-provenance div { display: grid; grid-template-columns: 120px 1fr; }
+.training-provenance dt { font-weight: 800; text-transform: capitalize; }
+.training-provenance dd { margin: 0; }
+.training-feedback-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.training-feedback-actions .primary-button { margin-left: auto; }
+.results-hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0; }
+.results-hero div { display: grid; padding: 22px; border-radius: 8px; background: #eaf4ee; }
+.results-hero strong { font-family: Georgia, serif; font-size: 2.2rem; }
+.results-hero span { color: #5e6c64; }
+.results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.result-card { padding: 22px; border: 1px solid #d6ded8; border-radius: 8px; background: #fff; }
+.result-card h2 { margin-top: 0; font-family: Georgia, serif; }
+.result-card dl { display: grid; gap: 9px; }
+.result-card dl div { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #e4e8e5; }
+.result-card dd { margin: 0; font-weight: 700; }
+.result-card li { margin: 7px 0; }
+.result-card li span { display: inline-block; min-width: 52px; color: #315f49; font-weight: 800; }
+.training-privacy-note { margin-top: 28px; color: #6d7972; font-size: .8rem; }
+
 @media (max-width: 900px) {
   .workspace-grid { grid-template-columns: 1fr; width: 100%; border-left: 0; border-right: 0; }
   .item-panel { border-right: 0; border-bottom: 1px solid #dde2dc; }
@@ -200,6 +270,7 @@ select, .project-name-field input { width: 100%; min-height: 42px; padding: 8px 
   .mapping-grid { grid-template-columns: 1fr; }
   .preflight-summary { grid-template-columns: 1fr 1fr; }
   .project-stats, .detail-grid, .review-card dl { grid-template-columns: 1fr; }
+  .training-intro-grid, .results-grid, .scope-distinction dl, .training-module-stats, .results-hero { grid-template-columns: 1fr; }
   .card-actions { flex-wrap: wrap; }
   .danger-button { margin-left: 0; }
 }

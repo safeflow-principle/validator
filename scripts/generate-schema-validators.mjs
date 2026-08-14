@@ -8,6 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const readJson = async (relativePath) => JSON.parse(await readFile(path.join(root, relativePath), "utf8"));
 const benchmarkPack = await readJson("schemas/benchmark-pack.schema.json");
 const projectBackup = await readJson("schemas/safeflow-project-backup.schema.json");
+const trainingCurriculum = await readJson("schemas/training-curriculum.schema.json");
 const ajv = new Ajv2020({
   allErrors: true,
   strict: true,
@@ -16,9 +17,11 @@ const ajv = new Ajv2020({
 });
 ajv.addSchema(benchmarkPack);
 ajv.addSchema(projectBackup);
+ajv.addSchema(trainingCurriculum);
 const standalone = standaloneCode(ajv, {
   validateBenchmarkPack: benchmarkPack.$id,
   validateSafeFlowProjectBackup: projectBackup.$id,
+  validateTrainingCurriculum: trainingCurriculum.$id,
 });
 const unicodeLength = "function safeflowUcs2Length(value){let length=0;for(const unused of value)length++;return length;}";
 const code = `${unicodeLength}\n${standalone.replace(

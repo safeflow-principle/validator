@@ -17,12 +17,13 @@ export interface BenchmarkReferencePanelProps {
   category: BenchmarkCategory;
   pack: BenchmarkPack;
   reference: TaxonomyReferenceView;
+  onOpen?: () => void;
 }
 
-export function BenchmarkReferencePanel({ category, pack, reference }: BenchmarkReferencePanelProps) {
+export function BenchmarkReferencePanel({ category, pack, reference, onOpen }: BenchmarkReferencePanelProps) {
   const composite = reference.details.length > 0;
   return (
-    <details className="reference-drawer">
+    <details className="reference-drawer" onToggle={(event) => { if (event.currentTarget.open) onOpen?.(); }}>
       <summary>Need help judging this?</summary>
       <div className="reference-content">
         <div className="reference-title">

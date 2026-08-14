@@ -6,4 +6,8 @@ export const ROUTES = [
   { pattern: "/projects/:projectId/review", purpose: "Human-only annotation review", milestone: "workflow" },
   { pattern: "/mock/annotation", purpose: "Synthetic blinded annotation screen", milestone: "skeleton" },
   { pattern: "/settings/data", purpose: "Local dataset import, mapping, and preflight", milestone: "milestone 2" },
+  { pattern: "/training", purpose: "Local validator training modules and progress", milestone: "training" },
+  { pattern: "/training/air-bench-2024", purpose: "AIR-BENCH scoring introduction and practice selection", milestone: "training" },
+  { pattern: "/training/air-bench-2024/practice", purpose: "Immediate-feedback AIR-BENCH practice", milestone: "training" },
+  { pattern: "/training/air-bench-2024/results", purpose: "Local practice results, retry, and deterministic mistake patterns", milestone: "training" },
 ] as const;

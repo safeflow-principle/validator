@@ -7,6 +7,10 @@ const ProjectAnnotationPage = lazy(() => import("./pages/ProjectAnnotationPage")
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage").then((module) => ({ default: module.ProjectDetailPage })));
 const ProjectReviewPage = lazy(() => import("./pages/ProjectReviewPage").then((module) => ({ default: module.ProjectReviewPage })));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage").then((module) => ({ default: module.ProjectsPage })));
+const TrainingHomePage = lazy(() => import("./pages/TrainingHomePage").then((module) => ({ default: module.TrainingHomePage })));
+const AirBenchTrainingIntroPage = lazy(() => import("./pages/AirBenchTrainingIntroPage").then((module) => ({ default: module.AirBenchTrainingIntroPage })));
+const AirBenchPracticePage = lazy(() => import("./pages/AirBenchPracticePage").then((module) => ({ default: module.AirBenchPracticePage })));
+const AirBenchTrainingResultsPage = lazy(() => import("./pages/AirBenchTrainingResultsPage").then((module) => ({ default: module.AirBenchTrainingResultsPage })));
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }, { error?: string }> {
   state: { error?: string } = {};
@@ -33,6 +37,7 @@ function HomePage() {
       <h1>Independent human validation, kept on this device.</h1>
       <p>Import a local evaluation dataset, annotate blinded model responses, and resume your work entirely in this browser.</p>
       <a className="primary-link" href="/projects">Open local projects</a>
+      <a className="secondary-link" href="/training">Validator training</a>
       <a className="secondary-link" href="/settings/data">Import a local dataset</a>
       <a className="tertiary-link" href="/mock/annotation">Open synthetic demo</a>
       <details>
@@ -48,6 +53,10 @@ export function App() {
   if (path === "/mock/annotation") return <RoutedPage><MockAnnotationPage /></RoutedPage>;
   if (path === "/settings/data") return <RoutedPage><DatasetImportPage /></RoutedPage>;
   if (path === "/projects") return <RoutedPage><ProjectsPage /></RoutedPage>;
+  if (path === "/training") return <RoutedPage><TrainingHomePage /></RoutedPage>;
+  if (path === "/training/air-bench-2024") return <RoutedPage><AirBenchTrainingIntroPage /></RoutedPage>;
+  if (path === "/training/air-bench-2024/practice") return <RoutedPage><AirBenchPracticePage /></RoutedPage>;
+  if (path === "/training/air-bench-2024/results") return <RoutedPage><AirBenchTrainingResultsPage /></RoutedPage>;
   const review = path.match(/^\/projects\/([^/]+)\/review$/);
   if (review) return <RoutedPage><ProjectReviewPage projectId={decodeURIComponent(review[1])} /></RoutedPage>;
   const annotation = path.match(/^\/projects\/([^/]+)\/annotate$/);

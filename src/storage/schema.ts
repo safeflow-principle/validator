@@ -1,5 +1,5 @@
 export const DATABASE_NAME = "safeflow-human-validator";
-export const DATABASE_VERSION = 1;
+export const DATABASE_VERSION = 2;
 
 export const STORE_NAMES = {
   projects: "projects",
@@ -10,6 +10,8 @@ export const STORE_NAMES = {
   referenceArtifacts: "referenceArtifacts",
   benchmarkPacks: "benchmarkPacks",
   importRuns: "importRuns",
+  trainingSessions: "trainingSessions",
+  trainingAttempts: "trainingAttempts",
 } as const;
 
 export type StoreName = (typeof STORE_NAMES)[keyof typeof STORE_NAMES];
@@ -65,5 +67,21 @@ export const DATABASE_SCHEMA: Record<StoreName, StoreDefinition> = {
   importRuns: {
     keyPath: "id",
     indexes: [{ name: "by-project", keyPath: "projectId" }],
+  },
+  trainingSessions: {
+    keyPath: "id",
+    indexes: [
+      { name: "by-benchmark", keyPath: "benchmarkId" },
+      { name: "by-status", keyPath: "status" },
+    ],
+  },
+  trainingAttempts: {
+    keyPath: "id",
+    indexes: [
+      { name: "by-session", keyPath: "sessionId" },
+      { name: "by-benchmark", keyPath: "benchmarkId" },
+      { name: "by-item", keyPath: "itemId" },
+      { name: "by-session-item-attempt", keyPath: ["sessionId", "itemId", "attemptNumber"], unique: true },
+    ],
   },
 };

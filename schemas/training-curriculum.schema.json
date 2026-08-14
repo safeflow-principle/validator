@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://safeflow.local/schemas/training-curriculum.schema.json",
+  "title": "SafeFlow Training Curriculum",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "version", "benchmarkId", "benchmarkVersion", "benchmarkPackVersion", "title", "reviewStatus", "modules", "items"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "id": { "$ref": "#/$defs/nonEmpty" },
+    "version": { "$ref": "#/$defs/nonEmpty" },
+    "benchmarkId": { "$ref": "#/$defs/nonEmpty" },
+    "benchmarkVersion": { "$ref": "#/$defs/nonEmpty" },
+    "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" },
+    "title": { "$ref": "#/$defs/nonEmpty" },
+    "reviewStatus": { "enum": ["draft", "reviewed", "approved"] },
+    "modules": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "title", "description", "order"],
+        "properties": { "id": { "$ref": "#/$defs/nonEmpty" }, "title": { "$ref": "#/$defs/nonEmpty" }, "description": { "$ref": "#/$defs/nonEmpty" }, "order": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/item" } }
+  },
+  "$defs": {
+    "nonEmpty": { "type": "string", "minLength": 1 },
+    "label": { "enum": ["0", "0.5", "1"] },
+    "provenance": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "label"],
+      "properties": {
+        "kind": { "enum": ["safeflow-authored", "safeflow-reviewed", "official-air-bench-dataset", "safeflow-derived"] },
+        "label": { "$ref": "#/$defs/nonEmpty" }, "citation": { "type": "string" }, "note": { "type": "string" }
+      }
+    },
+    "provenancedText": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "text"],
+      "properties": {
+        "kind": { "enum": ["official-benchmark-material", "safeflow-paraphrase", "safeflow-interpretation", "safeflow-authored-example"] },
+        "text": { "$ref": "#/$defs/nonEmpty" }, "citation": { "type": "string" }, "note": { "type": "string" }
+      }
+    },
+    "feedback": {
+      "type": "object", "additionalProperties": false, "required": ["isCorrect", "explanation"],
+      "properties": { "isCorrect": { "type": "boolean" }, "explanation": { "$ref": "#/$defs/nonEmpty" } }
+    },
+    "item": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "moduleId", "benchmarkId", "benchmarkVersion", "categoryId", "prompt", "response", "correctLabel", "correctExplanation", "decisiveEvidenceText", "optionFeedback", "learningObjectives", "traps", "mistakeTags", "difficulty", "reviewStatus", "trainingItemVersion", "explanationVersion", "rubricVersion", "benchmarkPackVersion", "applicableRule", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmpty" }, "moduleId": { "$ref": "#/$defs/nonEmpty" },
+        "benchmarkId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkVersion": { "$ref": "#/$defs/nonEmpty" }, "categoryId": { "$ref": "#/$defs/nonEmpty" },
+        "prompt": { "$ref": "#/$defs/nonEmpty" }, "response": { "$ref": "#/$defs/nonEmpty" }, "correctLabel": { "$ref": "#/$defs/label" },
+        "correctExplanation": { "$ref": "#/$defs/nonEmpty" },
+        "decisiveEvidenceText": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmpty" } },
+        "optionFeedback": {
+          "type": "object", "additionalProperties": false, "required": ["0", "0.5", "1"],
+          "properties": { "0": { "$ref": "#/$defs/feedback" }, "0.5": { "$ref": "#/$defs/feedback" }, "1": { "$ref": "#/$defs/feedback" } }
+        },
+        "learningObjectives": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmpty" } },
+        "traps": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } },
+        "mistakeTags": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } },
+        "difficulty": { "enum": ["introductory", "intermediate", "advanced"] },
+        "reviewStatus": { "enum": ["draft", "reviewed", "approved"] },
+        "trainingItemVersion": { "$ref": "#/$defs/nonEmpty" }, "explanationVersion": { "$ref": "#/$defs/nonEmpty" },
+        "rubricVersion": { "$ref": "#/$defs/nonEmpty" }, "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" },
+        "applicableRule": { "$ref": "#/$defs/provenancedText" },
+        "provenance": {
+          "type": "object", "additionalProperties": false,
+          "required": ["prompt", "response", "goldLabel", "explanation", "rubric", "category"],
+          "properties": {
+            "prompt": { "$ref": "#/$defs/provenance" }, "response": { "$ref": "#/$defs/provenance" },
+            "goldLabel": { "$ref": "#/$defs/provenance" }, "explanation": { "$ref": "#/$defs/provenance" },
+            "rubric": { "$ref": "#/$defs/provenance" }, "category": { "$ref": "#/$defs/provenance" }
+          }
+        },
+        "sourcePromptId": { "type": "string" }
+      }
+    }
+  }
+}

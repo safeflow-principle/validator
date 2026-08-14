@@ -62,6 +62,7 @@ AIR-BENCH taxonomy assets maintain two parallel representations: the exact datas
 | Local storage | Persist entities and atomic import bundles in browser IndexedDB | UI layout or benchmark semantics |
 | Dataset import | Parse local files, map columns, preflight records, and construct separated entities | React layout, annotation state, network services |
 | Project portability | Validate, export, and atomically restore versioned local project envelopes | Annotation DOM, judge comparison, cloud storage |
+| Training/practice | Render approved fixed-gold curriculum, append attempts, and derive local instructional results | Production annotations, judge artifacts, qualification |
 | Route composition | Resolve local records and give the UI only blinded views | Hidden data during active validation |
 
 Blinding is structural. `JudgeArtifact` and `ReferenceArtifact` are separate entities and stores. `getBlindedItem()` constructs a narrow object and drops metadata. `AnnotationScreen` has no prop through which judge output, reference labels, or another validator's annotation can arrive. This avoids rendering sensitive fields and then hiding them with CSS.
@@ -81,7 +82,7 @@ Project
 
 ## IndexedDB schema
 
-Database: `safeflow-human-validator`, version `1`.
+Database: `safeflow-human-validator`, version `2`.
 
 | Store | Primary key | Important indexes |
 |---|---|---|
@@ -93,8 +94,12 @@ Database: `safeflow-human-validator`, version `1`.
 | `referenceArtifacts` | `id` | unique item |
 | `benchmarkPacks` | `key` (`id@version`) | pack ID |
 | `importRuns` | `id` | project |
+| `trainingSessions` | `id` | benchmark; status |
+| `trainingAttempts` | `id` | session; benchmark; item; unique session + item + attempt number |
 
 Native IndexedDB is used to minimize runtime surface and keep the storage boundary explicit. Schema upgrades must be additive or include a tested migration in `onupgradeneeded`. Project, validation-item, judge-artifact, reference-artifact, and import-run records are committed in one transaction so partially imported datasets are not visible.
+
+Training stores are additive and deliberately have no indexes or foreign-key conventions shared with production annotations. Training attempts are append-only; production annotations retain their independent revision model.
 
 ## Milestone 2 import boundary
 
@@ -146,6 +151,10 @@ The annotated CSV path is narrower by design: it queries `BlindedValidationItem[
 | `/projects/:projectId/annotate` | Real blinded annotation workspace | Implemented |
 | `/projects/:projectId/review` | Human-only review and filters | Implemented |
 | `/settings/data` | Local dataset import, mapping, and preflight | Milestone 2 implemented slice |
+| `/training` | Training modules, local progress, and purpose separation | Implemented |
+| `/training/air-bench-2024` | Scoring introduction, curriculum, and category practice | Implemented |
+| `/training/air-bench-2024/practice` | Immediate-feedback approved practice | Implemented |
+| `/training/air-bench-2024/results` | Local results, deterministic patterns, and retry | Implemented |
 
 The application still uses a small pathname parser. A routing dependency remains unnecessary for this bounded route set.
 

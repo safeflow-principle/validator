@@ -2,6 +2,8 @@
 
 SafeFlow Human Validator is a local-first research tool for independently evaluating automated LLM judges. It supports importing a dataset, creating a local project, annotating structurally blinded items, autosaving drafts, leaving and resuming, reviewing human annotations, and reaching human-validation completion without revealing automated-judge results. Projects can be exported and restored as versioned `.safeflow.json` backups, and human annotations can be inspected as judge-free CSV files.
 
+The local AIR-BENCH training module provides a separate 16-item synthetic starter lesson, including longer realistic prompt/response examples, with immediate reviewed feedback, decisive evidence, retries, confidence calibration, and deterministic mistake patterns. Practice records never enter production annotation stores.
+
 The application does not transmit evaluation data. It has no authentication, backend database, server-side uploads, telemetry, remote logging, remote model calls, or managed-validation functionality.
 
 ## Run locally
@@ -49,6 +51,7 @@ The importer is read-only with respect to its sources and makes no network calls
 - Project states are `READY`, `VALIDATING`, `REVIEW`, and `HUMAN_COMPLETE`; project finalization is intentionally deferred.
 - Project backups preserve exact local workflow state and keep judge/reference records under a separate `isolatedArtifacts` envelope; restore is schema-validated and atomic.
 - Annotated CSV export reads only blinded items and the local validator's annotations.
+- `/training` provides approved, fixed-gold practice content in stores and routes separate from production annotation.
 
 ## Repository map
 
@@ -77,7 +80,7 @@ src/
   styles.css
 ```
 
-Architectural rationale is in [docs/architecture.md](docs/architecture.md). Privacy constraints are in [docs/local-privacy-model.md](docs/local-privacy-model.md). The portable backup contract is documented in [docs/local-project-backup-spec.md](docs/local-project-backup-spec.md).
+Architectural rationale is in [docs/architecture.md](docs/architecture.md). Privacy constraints are in [docs/local-privacy-model.md](docs/local-privacy-model.md). The portable backup contract is documented in [docs/local-project-backup-spec.md](docs/local-project-backup-spec.md), and the practice boundary in [docs/training-practice-spec.md](docs/training-practice-spec.md).
 
 ## Current scope limits
 

@@ -33,6 +33,8 @@ Production application code does not call `fetch`, `XMLHttpRequest`, `sendBeacon
 
 Project backup and annotated CSV exports are generated from local IndexedDB records using in-browser `Blob` downloads. Restore reads the user-selected backup locally and performs no upload. Backup files contain evaluation data and should be handled as sensitive local files. Within the JSON format, judge and reference artifacts remain structurally separated from the resumable annotation workflow; after restore they return to their isolated IndexedDB stores. Annotated CSV export never reads those artifact stores.
 
+Training content is a bundled static benchmark-pack asset. Training sessions, reference-open flags, confidence, and append-only attempts remain in separate local IndexedDB stores. They are not telemetry and are never transmitted. Immediate practice feedback intentionally reveals the packaged gold answer only after a local attempt is saved; production annotation routes remain structurally blinded and do not query training stores.
+
 This repository does not attempt to protect against a compromised browser, malicious browser extensions, operating-system malware, a hostile origin serving modified bundles, or a person with access to the unlocked browser profile. Local-first limits transmission; it is not endpoint encryption.
 
 ## Browser-origin caveat

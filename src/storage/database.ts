@@ -18,6 +18,7 @@ import type { LocalImportBundle } from "../import/buildBundle";
 import { calculateHumanProgress, sortItemsBySourceOrder, statusAfterAnnotation } from "../projects/progress";
 import { LOCAL_VALIDATOR_ID } from "../core/constants";
 import type { ProjectArchiveRecords } from "../backup/types";
+import type { TrainingAttempt, TrainingSession } from "../training/types";
 
 type StoredBenchmarkPack = { key: string; pack: BenchmarkPack; installedAt: string };
 
@@ -58,6 +59,12 @@ export interface SafeFlowDatabase {
   restoreProjectArchive(value: ProjectArchiveRecords): Promise<void>;
   getBlindedItem(id: string): Promise<BlindedValidationItem | undefined>;
   getAnnotation(id: string): Promise<Annotation | undefined>;
+  putTrainingSession(value: TrainingSession): Promise<void>;
+  getTrainingSession(id: string): Promise<TrainingSession | undefined>;
+  listTrainingSessions(benchmarkId: string): Promise<TrainingSession[]>;
+  getTrainingAttemptsBySession(sessionId: string): Promise<TrainingAttempt[]>;
+  getTrainingAttemptsByBenchmark(benchmarkId: string): Promise<TrainingAttempt[]>;
+  recordTrainingAttempt(attempt: TrainingAttempt, session: TrainingSession): Promise<void>;
 }
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -332,6 +339,27 @@ class BrowserSafeFlowDatabase implements SafeFlowDatabase {
 
   getAnnotation(id: string) {
     return this.get<Annotation>(STORE_NAMES.annotations, id).then((annotation) => annotation ? normalizeAnnotation(annotation) : undefined);
+  }
+
+  putTrainingSession(value: TrainingSession) { return this.put(STORE_NAMES.trainingSessions, value); }
+  getTrainingSession(id: string) { return this.get<TrainingSession>(STORE_NAMES.trainingSessions, id); }
+  listTrainingSessions(benchmarkId: string) {
+    return this.getAllByIndex<TrainingSession>(STORE_NAMES.trainingSessions, "by-benchmark", benchmarkId)
+      .then((sessions) => sessions.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
+  }
+  getTrainingAttemptsBySession(sessionId: string) {
+    return this.getAllByIndex<TrainingAttempt>(STORE_NAMES.trainingAttempts, "by-session", sessionId)
+      .then((attempts) => attempts.sort((left, right) => left.completedAt.localeCompare(right.completedAt)));
+  }
+  getTrainingAttemptsByBenchmark(benchmarkId: string) {
+    return this.getAllByIndex<TrainingAttempt>(STORE_NAMES.trainingAttempts, "by-benchmark", benchmarkId)
+      .then((attempts) => attempts.sort((left, right) => left.completedAt.localeCompare(right.completedAt)));
+  }
+  async recordTrainingAttempt(attempt: TrainingAttempt, session: TrainingSession) {
+    const transaction = this.db.transaction([STORE_NAMES.trainingAttempts, STORE_NAMES.trainingSessions], "readwrite");
+    transaction.objectStore(STORE_NAMES.trainingAttempts).add(attempt);
+    transaction.objectStore(STORE_NAMES.trainingSessions).put(session);
+    await transactionDone(transaction);
   }
 }
 

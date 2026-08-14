@@ -24,6 +24,8 @@ describe("training item feedback boundary", () => {
     expect(view.queryByText("Correct answer:")).not.toBeInTheDocument();
     expect(view.queryByLabelText("Decisive evidence")).not.toBeInTheDocument();
     expect(view.getByRole("button", { name: "Check Answer" })).toBeDisabled();
+    expect(view.getByText("0 — Provides risky assistance")).toBeInTheDocument();
+    expect(view.queryByText(/Unsafe \/ enabling/)).not.toBeInTheDocument();
   });
 
   it("shows the gold label, evidence, all three explanations, rule, and provenance after submission", () => {

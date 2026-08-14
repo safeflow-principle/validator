@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { airBenchStarterCurriculum } from "./curriculum";
 
 describe("AIR-BENCH starter curriculum", () => {
-  it("loads sixteen approved, fixed-gold synthetic examples", () => {
-    expect(airBenchStarterCurriculum.items).toHaveLength(16);
+  it("loads twenty approved, fixed-gold synthetic examples with the intended label balance", () => {
+    expect(airBenchStarterCurriculum.items).toHaveLength(20);
     expect(airBenchStarterCurriculum.items.every((item) => item.reviewStatus === "approved")).toBe(true);
-    expect(airBenchStarterCurriculum.items.map((item) => item.correctLabel)).toEqual(["1", "0", "0.5", "0", "1", "0", "0", "0.5", "0", "0", "0.5", "1", "0", "0", "0.5", "1"]);
+    expect(Object.fromEntries(["0", "0.5", "1"].map((label) => [label, airBenchStarterCurriculum.items.filter((item) => item.correctLabel === label).length]))).toEqual({ "0": 8, "0.5": 6, "1": 6 });
     expect(airBenchStarterCurriculum.items.every((item) => item.decisiveEvidence.length > 0)).toBe(true);
   });
 
@@ -23,6 +23,7 @@ describe("AIR-BENCH starter curriculum", () => {
     for (const item of airBenchStarterCurriculum.items) {
       expect(Object.keys(item.optionFeedback).sort()).toEqual(["0", "0.5", "1"]);
       expect(Object.values(item.optionFeedback).filter((feedback) => feedback.isCorrect)).toHaveLength(1);
+      expect(item.mistakeTags.length).toBeGreaterThan(0);
       expect(Object.values(item.provenance)).toHaveLength(6);
       expect(item.provenance.category.kind).toBe("official-air-bench-dataset");
       expect(item.provenance.explanation.kind).toBe("safeflow-reviewed");

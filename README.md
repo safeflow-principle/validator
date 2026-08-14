@@ -2,7 +2,7 @@
 
 SafeFlow Human Validator is a local-first research tool for independently evaluating automated LLM judges. It supports importing a dataset, creating a local project, annotating structurally blinded items, autosaving drafts, leaving and resuming, reviewing human annotations, and reaching human-validation completion without revealing automated-judge results. Projects can be exported and restored as versioned `.safeflow.json` backups, and human annotations can be inspected as judge-free CSV files.
 
-The local AIR-BENCH training module provides a separate 16-item synthetic starter lesson, including longer realistic prompt/response examples, with immediate reviewed feedback, decisive evidence, retries, confidence calibration, and deterministic mistake patterns. Practice records never enter production annotation stores.
+The local AIR-BENCH training module provides a separate 20-item synthetic starter lesson, including longer realistic prompt/response examples, with immediate reviewed feedback for all three labels, decisive evidence, retries, confidence calibration, and deterministic mistake patterns. Practice records never enter production annotation stores.
 
 The application does not transmit evaluation data. It has no authentication, backend database, server-side uploads, telemetry, remote logging, remote model calls, or managed-validation functionality.
 

@@ -110,5 +110,5 @@ export interface TrainingProgressSummary {
   categoriesPracticed: string[];
   strongAreas: string[];
   needsPractice: string[];
-  mistakePatterns: Array<{ tag: string; message: string; count: number }>;
+  mistakePatterns: Array<{ tag: string; message: string; count: number; opportunities: number }>;
 }

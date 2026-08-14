@@ -1,6 +1,6 @@
 # SafeFlow Human Validator
 
-SafeFlow Human Validator is a local-first research tool for independently evaluating automated LLM judges. It now supports the first complete workflow: import a dataset, create a local project, annotate structurally blinded items, autosave drafts, leave and resume, review human annotations, and reach human-validation completion without revealing automated-judge results.
+SafeFlow Human Validator is a local-first research tool for independently evaluating automated LLM judges. It supports importing a dataset, creating a local project, annotating structurally blinded items, autosaving drafts, leaving and resuming, reviewing human annotations, and reaching human-validation completion without revealing automated-judge results. Projects can be exported and restored as versioned `.safeflow.json` backups, and human annotations can be inspected as judge-free CSV files.
 
 The application does not transmit evaluation data. It has no authentication, backend database, server-side uploads, telemetry, remote logging, remote model calls, or managed-validation functionality.
 
@@ -47,6 +47,8 @@ The importer is read-only with respect to its sources and makes no network calls
 - Recognized AIR-BENCH prompt IDs can hydrate missing canonical prompt/category metadata; explicit conflicts block import and every hydrated field records provenance.
 - `/projects`, project detail, real annotation, and human-only review routes implement deterministic source-order navigation and persistent resume semantics.
 - Project states are `READY`, `VALIDATING`, `REVIEW`, and `HUMAN_COMPLETE`; project finalization is intentionally deferred.
+- Project backups preserve exact local workflow state and keep judge/reference records under a separate `isolatedArtifacts` envelope; restore is schema-validated and atomic.
+- Annotated CSV export reads only blinded items and the local validator's annotations.
 
 ## Repository map
 
@@ -75,7 +77,7 @@ src/
   styles.css
 ```
 
-Architectural rationale is in [docs/architecture.md](docs/architecture.md). Privacy constraints are in [docs/local-privacy-model.md](docs/local-privacy-model.md).
+Architectural rationale is in [docs/architecture.md](docs/architecture.md). Privacy constraints are in [docs/local-privacy-model.md](docs/local-privacy-model.md). The portable backup contract is documented in [docs/local-project-backup-spec.md](docs/local-project-backup-spec.md).
 
 ## Current scope limits
 

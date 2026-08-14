@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import { loadBundledBenchmarkPack } from "../benchmarks/loader";
 import type { ProjectDetail } from "../core/types";
 import { openSafeFlowDatabase } from "../storage/database";
+import { createAnnotatedCsv } from "../backup/annotatedCsv";
+import { downloadLocalText } from "../backup/download";
+import { createSafeFlowProjectBackup, safeProjectFileStem, serializeSafeFlowProjectBackup } from "../backup/projectBackup";
 
 export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const [detail, setDetail] = useState<ProjectDetail | null>();
+  const [exportStatus, setExportStatus] = useState<string>();
   useEffect(() => {
     const databasePromise = openSafeFlowDatabase();
     void databasePromise.then(async (database) => {
@@ -14,8 +18,29 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   if (detail === undefined) return <main className="loading-screen"><p>Loading project…</p></main>;
   if (detail === null) return <main className="project-shell"><h1>Project not found</h1><a href="/projects">Back to projects</a></main>;
   const pack = loadBundledBenchmarkPack(detail.project.benchmarkPackId);
+  const projectName = detail.project.name;
   const complete = detail.progress.submitted === detail.progress.total && detail.progress.total > 0;
   const started = detail.progress.drafts + detail.progress.submitted > 0;
+  async function exportBackup() {
+    setExportStatus("Preparing backup…");
+    const database = await openSafeFlowDatabase();
+    try {
+      const backup = await createSafeFlowProjectBackup(database, projectId);
+      downloadLocalText(serializeSafeFlowProjectBackup(backup), `${safeProjectFileStem(projectName)}.safeflow.json`, "application/json");
+      setExportStatus("Backup downloaded locally");
+    } catch (error) { setExportStatus(error instanceof Error ? error.message : "Backup export failed."); }
+    finally { database.close(); }
+  }
+  async function exportCsv() {
+    setExportStatus("Preparing annotated CSV…");
+    const database = await openSafeFlowDatabase();
+    try {
+      const [items, annotations] = await Promise.all([database.getBlindedProjectItems(projectId), database.getProjectAnnotations(projectId)]);
+      downloadLocalText(createAnnotatedCsv(items, annotations), `${safeProjectFileStem(projectName)}-human-annotations.csv`, "text/csv;charset=utf-8");
+      setExportStatus("Annotated CSV downloaded locally");
+    } catch (error) { setExportStatus(error instanceof Error ? error.message : "CSV export failed."); }
+    finally { database.close(); }
+  }
   return (
     <main className="project-shell">
       <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href="/projects">All projects</a></header>
@@ -45,6 +70,15 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         {!complete && <a className="primary-link" href={`/projects/${projectId}/annotate`}>{started ? "Resume Validation" : "Start Validation"}</a>}
         <a className={complete ? "primary-link" : "secondary-link button-link"} href={`/projects/${projectId}/review`}>{complete ? "Review Before Finalization" : "Review Annotations"}</a>
       </div>
+      <section className="detail-card export-card">
+        <h2>Local backup and inspection</h2>
+        <p>The project backup preserves resumable local state. Judge and reference artifacts remain in an isolated section and are never included in the annotated CSV.</p>
+        <div className="card-actions">
+          <button className="secondary-button" onClick={() => void exportBackup()} type="button">Export .safeflow.json</button>
+          <button className="secondary-button" onClick={() => void exportCsv()} type="button">Export annotated CSV</button>
+        </div>
+        {exportStatus && <p className="status-copy" role="status">{exportStatus}</p>}
+      </section>
     </main>
   );
 }

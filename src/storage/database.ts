@@ -17,6 +17,7 @@ import { DATABASE_NAME, DATABASE_SCHEMA, DATABASE_VERSION, STORE_NAMES, type Sto
 import type { LocalImportBundle } from "../import/buildBundle";
 import { calculateHumanProgress, sortItemsBySourceOrder, statusAfterAnnotation } from "../projects/progress";
 import { LOCAL_VALIDATOR_ID } from "../core/constants";
+import type { ProjectArchiveRecords } from "../backup/types";
 
 type StoredBenchmarkPack = { key: string; pack: BenchmarkPack; installedAt: string };
 
@@ -53,6 +54,8 @@ export interface SafeFlowDatabase {
   saveAnnotation(value: Annotation): Promise<HumanValidationProgress>;
   setProjectStatus(projectId: string, status: ProjectStatus): Promise<void>;
   deleteProject(projectId: string): Promise<void>;
+  getProjectArchive(projectId: string): Promise<ProjectArchiveRecords | undefined>;
+  restoreProjectArchive(value: ProjectArchiveRecords): Promise<void>;
   getBlindedItem(id: string): Promise<BlindedValidationItem | undefined>;
   getAnnotation(id: string): Promise<Annotation | undefined>;
 }
@@ -254,6 +257,60 @@ class BrowserSafeFlowDatabase implements SafeFlowDatabase {
       for (const key of keys.judge) transaction.objectStore(STORE_NAMES.judgeArtifacts).delete(key);
       for (const key of keys.reference) transaction.objectStore(STORE_NAMES.referenceArtifacts).delete(key);
     }
+    await transactionDone(transaction);
+  }
+
+  async getProjectArchive(projectId: string): Promise<ProjectArchiveRecords | undefined> {
+    const storedProject = await this.get<Project>(STORE_NAMES.projects, projectId);
+    if (!storedProject) return undefined;
+    const project = normalizeProject(storedProject);
+    const [items, annotations, importRuns, storedPack] = await Promise.all([
+      this.getAllByIndex<ValidationItem>(STORE_NAMES.validationItems, "by-project", projectId).then(sortItemsBySourceOrder),
+      this.getAllByIndex<Annotation>(STORE_NAMES.annotations, "by-project", projectId).then((values) => values.map(normalizeAnnotation)),
+      this.getAllByIndex<ImportRun>(STORE_NAMES.importRuns, "by-project", projectId),
+      this.get<StoredBenchmarkPack>(STORE_NAMES.benchmarkPacks, `${project.benchmarkPackId}@${project.benchmarkPackVersion}`),
+    ]);
+    if (!storedPack) throw new Error(`Benchmark pack ${project.benchmarkPackId}@${project.benchmarkPackVersion} is unavailable locally.`);
+    const artifacts = await Promise.all(items.map(async (item) => Promise.all([
+      this.getAllByIndex<JudgeArtifact>(STORE_NAMES.judgeArtifacts, "by-item", item.id),
+      this.getAllByIndex<ReferenceArtifact>(STORE_NAMES.referenceArtifacts, "by-item", item.id),
+    ])));
+    return {
+      project,
+      items,
+      annotations,
+      importRuns,
+      benchmarkPack: structuredClone(storedPack.pack),
+      judgeArtifacts: artifacts.flatMap(([judges]) => judges),
+      referenceArtifacts: artifacts.flatMap(([, references]) => references),
+    };
+  }
+
+  async restoreProjectArchive(value: ProjectArchiveRecords): Promise<void> {
+    if (await this.get<Project>(STORE_NAMES.projects, value.project.id)) {
+      throw new Error(`A local project with ID ${value.project.id} already exists.`);
+    }
+    const stores = [
+      STORE_NAMES.projects,
+      STORE_NAMES.validationItems,
+      STORE_NAMES.annotations,
+      STORE_NAMES.judgeArtifacts,
+      STORE_NAMES.referenceArtifacts,
+      STORE_NAMES.benchmarkPacks,
+      STORE_NAMES.importRuns,
+    ];
+    const transaction = this.db.transaction(stores, "readwrite");
+    transaction.objectStore(STORE_NAMES.projects).add(value.project);
+    for (const item of value.items) transaction.objectStore(STORE_NAMES.validationItems).add(item);
+    for (const annotation of value.annotations) transaction.objectStore(STORE_NAMES.annotations).add(annotation);
+    for (const artifact of value.judgeArtifacts) transaction.objectStore(STORE_NAMES.judgeArtifacts).add(artifact);
+    for (const artifact of value.referenceArtifacts) transaction.objectStore(STORE_NAMES.referenceArtifacts).add(artifact);
+    for (const run of value.importRuns) transaction.objectStore(STORE_NAMES.importRuns).add(run);
+    transaction.objectStore(STORE_NAMES.benchmarkPacks).put({
+      key: `${value.benchmarkPack.id}@${value.benchmarkPack.version}`,
+      pack: value.benchmarkPack,
+      installedAt: new Date().toISOString(),
+    } satisfies StoredBenchmarkPack);
     await transactionDone(transaction);
   }
 

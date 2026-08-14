@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { loadBundledBenchmarkPack } from "../benchmarks/loader";
 import type { ProjectSummary } from "../core/types";
 import { openSafeFlowDatabase } from "../storage/database";
+import { parseSafeFlowProjectBackupText, restoreSafeFlowProjectBackup } from "../backup/projectBackup";
 
 function benchmarkName(id: string): string {
   try { return loadBundledBenchmarkPack(id).name; } catch { return id; }
@@ -10,6 +11,7 @@ function benchmarkName(id: string): string {
 export function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectSummary[]>();
   const [error, setError] = useState<string>();
+  const [restoring, setRestoring] = useState(false);
 
   async function load() {
     const database = await openSafeFlowDatabase();
@@ -25,12 +27,35 @@ export function ProjectsPage() {
     await load();
   }
 
+  async function restoreBackup(file: File | undefined) {
+    if (!file || restoring) return;
+    setRestoring(true); setError(undefined);
+    try {
+      const backup = parseSafeFlowProjectBackupText(await file.text());
+      const database = await openSafeFlowDatabase();
+      let projectId: string;
+      try { projectId = await restoreSafeFlowProjectBackup(database, backup); }
+      finally { database.close(); }
+      window.location.assign(`/projects/${projectId}`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not restore the local backup.");
+      setRestoring(false);
+    }
+  }
+
   return (
     <main className="project-shell">
       <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a className="primary-link compact" href="/settings/data">Import dataset</a></header>
       <span className="eyebrow">Persistent Local mode</span>
       <h1>Projects</h1>
       <p className="page-intro">All projects and annotations remain in this browser profile.</p>
+      <section className="backup-restore-card">
+        <div><strong>Restore a local project backup</strong><p>Imports a versioned <code>.safeflow.json</code> file entirely in this browser.</p></div>
+        <label className="secondary-link button-link file-button">
+          {restoring ? "Restoring…" : "Import backup"}
+          <input accept=".json,.safeflow.json,application/json" disabled={restoring} onChange={(event) => void restoreBackup(event.target.files?.[0])} type="file" />
+        </label>
+      </section>
       {error && <p className="error-message" role="alert">{error}</p>}
       {!projects ? <p>Loading local projects…</p> : projects.length === 0 ? (
         <section className="empty-state"><h2>No local projects yet</h2><p>Import a result file to begin independent validation.</p><a className="primary-link" href="/settings/data">Import a dataset</a></section>

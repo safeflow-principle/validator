@@ -61,6 +61,7 @@ AIR-BENCH taxonomy assets maintain two parallel representations: the exact datas
 | Benchmark loader | Validate and clone versioned JSON packs | Project or evaluation data |
 | Local storage | Persist entities and atomic import bundles in browser IndexedDB | UI layout or benchmark semantics |
 | Dataset import | Parse local files, map columns, preflight records, and construct separated entities | React layout, annotation state, network services |
+| Project portability | Validate, export, and atomically restore versioned local project envelopes | Annotation DOM, judge comparison, cloud storage |
 | Route composition | Resolve local records and give the UI only blinded views | Hidden data during active validation |
 
 Blinding is structural. `JudgeArtifact` and `ReferenceArtifact` are separate entities and stores. `getBlindedItem()` constructs a narrow object and drops metadata. `AnnotationScreen` has no prop through which judge output, reference labels, or another validator's annotation can arrive. This avoids rendering sensitive fields and then hiding them with CSS.
@@ -127,6 +128,12 @@ Autosave persists score, confidence, reasoning, evidence spans, and review flags
 Items are sorted by imported source-row order. A route without an explicit item first resumes the earliest draft, otherwise the first unsubmitted item, and routes to review if all items are submitted. Resume state is derived from IndexedDB records, not route or transient React state.
 
 Project transitions are `READY → VALIDATING ↔ REVIEW → HUMAN_COMPLETE`. Editing a submitted annotation returns it to draft and moves a human-complete project back to `VALIDATING`. There is deliberately no `COMPLETE` state yet.
+
+## Local backup and restore
+
+Project portability is implemented as a versioned `.safeflow.json` envelope. Its `workflow` section contains the resumable human-validation state and embedded benchmark pack; its sibling `isolatedArtifacts` section contains judge and reference records. Restore validates cross-record relationships, evidence offsets, progress, source provenance, and pack versions before committing every record in one transaction. Existing project IDs are never overwritten.
+
+The annotated CSV path is narrower by design: it queries `BlindedValidationItem[]` and local-validator annotations only. Judge/reference repositories are not called during CSV generation.
 
 ## Route map
 

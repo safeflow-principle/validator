@@ -31,6 +31,8 @@ The import pipeline creates `ValidationItem`, `JudgeArtifact`, and `ReferenceArt
 
 Production application code does not call `fetch`, `XMLHttpRequest`, `sendBeacon`, WebSocket APIs, or remote SDKs. The HTML content-security policy restricts resources to the same origin and disallows forms and embedded objects. The Vite development server uses a same-origin development connection for hot reload; it does not receive or relay evaluation records.
 
+Project backup and annotated CSV exports are generated from local IndexedDB records using in-browser `Blob` downloads. Restore reads the user-selected backup locally and performs no upload. Backup files contain evaluation data and should be handled as sensitive local files. Within the JSON format, judge and reference artifacts remain structurally separated from the resumable annotation workflow; after restore they return to their isolated IndexedDB stores. Annotated CSV export never reads those artifact stores.
+
 This repository does not attempt to protect against a compromised browser, malicious browser extensions, operating-system malware, a hostile origin serving modified bundles, or a person with access to the unlocked browser profile. Local-first limits transmission; it is not endpoint encryption.
 
 ## Browser-origin caveat

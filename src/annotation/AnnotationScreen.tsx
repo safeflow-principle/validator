@@ -19,7 +19,8 @@ export interface AnnotationScreenProps {
 
 export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReference, position = 1, total = 1, projectName = "Synthetic research item", submittedCount = 0 }: AnnotationScreenProps) {
   const annotation: Annotation = state.annotation;
-  const locked = state.value === "saving";
+  const navigationLocked = state.value === "saving";
+  const inputLocked = state.value === "saving" && state.intent !== "autosave";
   const dirty = state.value === "editing" && state.dirty;
   const responseRef = useRef<HTMLParagraphElement>(null);
   const category = item.categoryId ? pack.categories.find((candidate) => candidate.id === item.categoryId) : undefined;
@@ -86,14 +87,14 @@ export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReferenc
                 segment.evidence ? <mark key={index}>{segment.text}</mark> : <span key={index}>{segment.text}</span>
               ))}
             </p>
-            <button className="evidence-button" disabled={locked} onClick={addSelectedEvidence} type="button">Add selected text as evidence</button>
+            <button className="evidence-button" disabled={inputLocked} onClick={addSelectedEvidence} type="button">Add selected text as evidence</button>
             {annotation.evidenceSpans.length > 0 && (
               <ol className="evidence-list" aria-label="Evidence spans">
                 {annotation.evidenceSpans.map((span, index) => (
                   <li key={`${span.start}-${span.end}`}>
                     <q>{span.text}</q>
                     <small>Offsets {span.start}–{span.end}</small>
-                    <button aria-label={`Remove evidence ${index + 1}`} disabled={locked} onClick={() => dispatch({ type: "EVIDENCE_REMOVED", index })} type="button">Remove</button>
+                    <button aria-label={`Remove evidence ${index + 1}`} disabled={inputLocked} onClick={() => dispatch({ type: "EVIDENCE_REMOVED", index })} type="button">Remove</button>
                   </li>
                 ))}
               </ol>
@@ -116,7 +117,7 @@ export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReferenc
                 <span>{field.label}{field.required && " *"}</span>
                 {field.helpText?.text && <small className="field-help">{field.helpText.text}</small>}
                 <textarea
-                  disabled={locked}
+                  disabled={inputLocked}
                   onChange={(event) => dispatch({ type: "ANSWER_CHANGED", fieldId: field.id, value: event.target.value })}
                   rows={4}
                   value={String(annotation.answers[field.id] ?? "")}
@@ -126,14 +127,14 @@ export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReferenc
               <label className="flag-field" key={field.id}>
                 <input
                   checked={annotation.answers[field.id] === true}
-                  disabled={locked}
+                  disabled={inputLocked}
                   onChange={(event) => dispatch({ type: "ANSWER_CHANGED", fieldId: field.id, value: event.target.checked })}
                   type="checkbox"
                 />
                 <span><strong>{field.label}</strong>{field.helpText?.text && <small>{field.helpText.text}</small>}</span>
               </label>
             ) : (
-              <fieldset key={field.id} disabled={locked}>
+              <fieldset key={field.id} disabled={inputLocked}>
                 <legend>{field.label}{field.required && <span aria-label="required"> *</span>}</legend>
                 {field.helpText?.text && <p className="field-help">{field.helpText.text}</p>}
                 {field.type === "single-choice" && (
@@ -162,9 +163,9 @@ export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReferenc
           {(state.value === "save-error" || (state.value === "editing" && state.error)) && <p className="error-message" role="alert">{state.value === "save-error" ? state.error : state.error}</p>}
 
           <div className="annotation-nav-actions">
-            <button className="secondary-button" disabled={locked || position <= 1} onClick={() => dispatch({ type: "SAVE_REQUESTED", intent: "previous" })} type="button">Previous</button>
-            <button className="secondary-button" disabled={locked} onClick={() => dispatch({ type: "SAVE_REQUESTED", intent: "draft-exit" })} type="button">Save Draft & Exit</button>
-            <button className="primary-button" disabled={locked} onClick={() => dispatch({ type: "SUBMIT_REQUESTED", pack })} type="button">{position === total ? "Submit item" : "Submit & Next"}</button>
+            <button className="secondary-button" disabled={navigationLocked || position <= 1} onClick={() => dispatch({ type: "SAVE_REQUESTED", intent: "previous" })} type="button">Previous</button>
+            <button className="secondary-button" disabled={navigationLocked} onClick={() => dispatch({ type: "SAVE_REQUESTED", intent: "draft-exit" })} type="button">Save Draft & Exit</button>
+            <button className="primary-button" disabled={navigationLocked} onClick={() => dispatch({ type: "SUBMIT_REQUESTED", pack })} type="button">{position === total ? "Submit item" : "Submit & Next"}</button>
           </div>
         </section>
       </div>

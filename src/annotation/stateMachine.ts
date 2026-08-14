@@ -5,7 +5,7 @@ export type SaveIntent = "autosave" | "draft-exit" | "previous" | "submit";
 export type AnnotationState =
   | { value: "loading" }
   | { value: "editing"; annotation: Annotation; dirty: boolean; error?: string }
-  | { value: "saving"; annotation: Annotation; intent: SaveIntent }
+  | { value: "saving"; annotation: Annotation; savingAnnotation: Annotation; intent: SaveIntent; dirty: boolean; error?: string }
   | { value: "save-error"; annotation: Annotation; error: string };
 
 export type AnnotationEvent =
@@ -46,7 +46,18 @@ export function annotationTransition(state: AnnotationState, event: AnnotationEv
 
   if (state.value === "saving") {
     if (event.type === "SAVE_FAILED") return { value: "save-error", annotation: state.annotation, error: event.message };
-    if (event.type === "SAVE_SUCCEEDED") return { value: "editing", annotation: event.annotation, dirty: false };
+    if (event.type === "SAVE_SUCCEEDED") {
+      if (!state.dirty) return { value: "editing", annotation: event.annotation, dirty: false };
+      return {
+        value: "editing",
+        annotation: { ...state.annotation, revision: event.annotation.revision, updatedAt: event.annotation.updatedAt },
+        dirty: true,
+      };
+    }
+    if (state.intent === "autosave" && ["ANSWER_CHANGED", "NOTES_CHANGED", "EVIDENCE_ADDED", "EVIDENCE_REMOVED"].includes(event.type)) {
+      const changed = annotationTransition({ value: "editing", annotation: state.annotation, dirty: state.dirty }, event);
+      if (changed.value === "editing") return { ...state, annotation: changed.annotation, dirty: changed.dirty, error: changed.error };
+    }
     return state;
   }
 
@@ -65,11 +76,11 @@ export function annotationTransition(state: AnnotationState, event: AnnotationEv
     case "EVIDENCE_REMOVED":
       return change(state, { ...state.annotation, evidenceSpans: state.annotation.evidenceSpans.filter((_, index) => index !== event.index) });
     case "SAVE_REQUESTED":
-      return { value: "saving", annotation: state.annotation, intent: event.intent ?? "autosave" };
+      return { value: "saving", annotation: state.annotation, savingAnnotation: state.annotation, intent: event.intent ?? "autosave", dirty: false };
     case "SUBMIT_REQUESTED": {
       const missing = missingRequiredFields(event.pack, state.annotation);
       if (missing.length) return { value: "editing", annotation: state.annotation, dirty: state.value === "editing" && state.dirty, error: `Complete required fields: ${missing.join(", ")}` };
-      return { value: "saving", annotation: state.annotation, intent: "submit" };
+      return { value: "saving", annotation: state.annotation, savingAnnotation: state.annotation, intent: "submit", dirty: false };
     }
     case "SAVE_FAILED":
       return { value: "save-error", annotation: state.annotation, error: event.message };

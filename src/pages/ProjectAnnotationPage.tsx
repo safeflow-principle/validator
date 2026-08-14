@@ -68,14 +68,15 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
   useEffect(() => {
     if (state.value !== "saving" || !database.current) return;
     const intent = state.intent;
+    const savingAnnotation = state.savingAnnotation;
     const timestamp = new Date().toISOString();
-    const submitted = intent === "submit" || state.annotation.status === "submitted";
+    const submitted = intent === "submit" || savingAnnotation.status === "submitted";
     const persisted: Annotation = {
-      ...state.annotation,
+      ...savingAnnotation,
       status: submitted ? "submitted" : "draft",
-      revision: state.annotation.revision + 1,
+      revision: savingAnnotation.revision + 1,
       updatedAt: timestamp,
-      ...(submitted ? { submittedAt: intent === "submit" ? timestamp : state.annotation.submittedAt ?? timestamp } : {}),
+      ...(submitted ? { submittedAt: intent === "submit" ? timestamp : savingAnnotation.submittedAt ?? timestamp } : {}),
     };
     void database.current.saveAnnotation(persisted).then(() => {
       annotations.current.set(persisted.itemId, persisted);
@@ -89,7 +90,7 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
         window.location.assign(next ? `/projects/${projectId}/annotate?item=${next.id}` : `/projects/${projectId}/review`);
       }
     }).catch((error: unknown) => dispatch({ type: "SAVE_FAILED", message: error instanceof Error ? error.message : "Local save failed." }));
-  }, [state, items, projectId]);
+  }, [state.value === "saving" ? state.savingAnnotation : undefined, state.value === "saving" ? state.intent : undefined, items, projectId]);
 
   if (state.value === "loading" || !detail || !activeItemId) return <main className="loading-screen"><p>Opening blinded validation item…</p></main>;
   const item = items.find((candidate) => candidate.id === activeItemId)!;

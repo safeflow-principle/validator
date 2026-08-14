@@ -35,4 +35,19 @@ describe("annotation state machine", () => {
   it("reports required score, confidence, and reasoning separately", () => {
     expect(missingRequiredFields(pack, annotation)).toEqual(["score", "confidence", "reasoning"]);
   });
+
+  it("queues edits made while an autosave is in flight", () => {
+    let state = annotationTransition(initialAnnotationState, { type: "LOADED", annotation });
+    state = annotationTransition(state, { type: "ANSWER_CHANGED", fieldId: "reasoning", value: "First version" });
+    state = annotationTransition(state, { type: "SAVE_REQUESTED", intent: "autosave" });
+    if (state.value !== "saving") throw new Error("expected autosave state");
+    const savedSnapshot = { ...state.savingAnnotation, revision: 1, updatedAt: "saved" };
+    state = annotationTransition(state, { type: "ANSWER_CHANGED", fieldId: "reasoning", value: "Continued typing" });
+    state = annotationTransition(state, { type: "SAVE_SUCCEEDED", annotation: savedSnapshot });
+    expect(state).toMatchObject({
+      value: "editing",
+      dirty: true,
+      annotation: { revision: 1, updatedAt: "saved", answers: { reasoning: "Continued typing" } },
+    });
+  });
 });

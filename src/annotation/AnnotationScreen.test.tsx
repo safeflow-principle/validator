@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { loadBundledBenchmarkPack } from "../benchmarks/loader";
 import type { Annotation } from "../core/types";
@@ -21,5 +21,24 @@ describe("AnnotationScreen blinding", () => {
     expect(screen.getByText("visible prompt")).toBeInTheDocument();
     expect(container).not.toHaveTextContent("BLINDED_SYNTHETIC_JUDGE_REASONING");
     expect(container.querySelector("[hidden]")).toBeNull();
+  });
+
+  it("keeps the reasoning field enabled and focused during autosave", () => {
+    const annotation: Annotation = {
+      id: "a", itemId: "i", projectId: "p", validatorId: "v", benchmarkPackId: "air-bench-2024",
+      status: "draft", answers: { reasoning: "Still typing" }, evidenceSpans: [], revision: 0, createdAt: "now", updatedAt: "now",
+    };
+    const { container } = render(
+      <AnnotationScreen
+        dispatch={vi.fn()}
+        item={{ id: "i", projectId: "p", prompt: "prompt", response: "response" }}
+        pack={loadBundledBenchmarkPack("air-bench-2024")}
+        state={{ value: "saving", annotation, savingAnnotation: annotation, intent: "autosave", dirty: false }}
+      />,
+    );
+    const reasoning = within(container).getByRole("textbox", { name: /Reasoning/ });
+    reasoning.focus();
+    expect(reasoning).toBeEnabled();
+    expect(reasoning).toHaveFocus();
   });
 });

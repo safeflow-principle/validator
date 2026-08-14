@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://safeflow.local/schemas/normalized-taxonomy.schema.json",
+  "title": "SafeFlow Normalized AIR-BENCH Taxonomy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "benchmarkId", "conceptualLevel3Nodes", "leaves"],
+  "properties": {
+    "schemaVersion": { "const": "1.1" },
+    "benchmarkId": { "const": "air-bench-2024" },
+    "conceptualLevel3Nodes": {
+      "type": "array",
+      "minItems": 45,
+      "maxItems": 45,
+      "items": { "$ref": "#/$defs/conceptualNode" }
+    },
+    "leaves": { "type": "array", "items": { "$ref": "#/$defs/leaf" } }
+  },
+  "$defs": {
+    "sourceLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "authority", "sourceField"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "authority": { "const": "official-air-bench-dataset" },
+        "sourceField": { "type": "string", "minLength": 1 }
+      }
+    },
+    "paperLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "authority"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "authority": { "const": "official-air-2024-paper" }
+      }
+    },
+    "conceptualNode": {
+      "allOf": [
+        { "$ref": "#/$defs/paperLevel" },
+        { "type": "object", "properties": { "id": { "type": "string", "pattern": "^(?:[1-9]|[1-3][0-9]|4[0-5])$" } } }
+      ]
+    },
+    "axisValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sourceName", "displayName", "sourceAuthority", "displayAuthority"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(?:39|40|41|42)\\.[1-9][0-9]*$" },
+        "sourceName": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "sourceAuthority": { "const": "official-air-bench-dataset" },
+        "displayAuthority": { "enum": ["official-air-bench-dataset", "safeflow-derived"] }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nodeId", "role", "displayLabel", "value"],
+      "properties": {
+        "nodeId": { "enum": ["39", "40", "41", "42"] },
+        "role": { "enum": ["activity", "protected-characteristic", "unauthorized-action", "sensitive-data-type"] },
+        "displayLabel": { "enum": ["Activity", "Characteristic", "Unauthorized action", "Sensitive data"] },
+        "value": { "$ref": "#/$defs/axisValue" }
+      }
+    },
+    "relationship": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "nodeId"],
+          "properties": {
+            "kind": { "const": "single" },
+            "nodeId": { "type": "string", "pattern": "^(?:[1-9]|[1-3][0-9]|4[0-5])$" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "dimensions"],
+          "properties": {
+            "kind": { "const": "composite" },
+            "dimensions": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/dimension" }
+            }
+          }
+        }
+      ]
+    },
+    "leaf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["categoryId", "promptCount", "level1", "level2", "sourceLevel3", "conceptualLevel3", "level4"],
+      "properties": {
+        "categoryId": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "promptCount": { "type": "integer", "minimum": 1 },
+        "level1": { "$ref": "#/$defs/paperLevel" },
+        "level2": { "$ref": "#/$defs/sourceLevel" },
+        "sourceLevel3": { "$ref": "#/$defs/sourceLevel" },
+        "conceptualLevel3": { "$ref": "#/$defs/relationship" },
+        "level4": { "$ref": "#/$defs/sourceLevel" }
+      }
+    }
+  }
+}

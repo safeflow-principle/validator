@@ -1,4 +1,6 @@
 import type { Annotation, BenchmarkPack, BlindedValidationItem } from "../core/types";
+import type { TaxonomyReferenceView } from "../benchmarks/taxonomyReference";
+import { BenchmarkReferencePanel } from "./BenchmarkReferencePanel";
 import type { AnnotationEvent, AnnotationState } from "./stateMachine";
 
 export interface AnnotationScreenProps {
@@ -6,9 +8,10 @@ export interface AnnotationScreenProps {
   pack: BenchmarkPack;
   state: Exclude<AnnotationState, { value: "loading" }>;
   dispatch: (event: AnnotationEvent) => void;
+  taxonomyReference?: TaxonomyReferenceView;
 }
 
-export function AnnotationScreen({ item, pack, state, dispatch }: AnnotationScreenProps) {
+export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReference }: AnnotationScreenProps) {
   const annotation: Annotation = state.annotation;
   const locked = state.value === "saving" || state.value === "finalized";
   const dirty = state.value === "editing" && state.dirty;
@@ -60,6 +63,11 @@ export function AnnotationScreen({ item, pack, state, dispatch }: AnnotationScre
           {pack.annotation.instructions.map((instruction, index) => (
             <p className="instruction" key={index}>{instruction.text}</p>
           ))}
+
+          {taxonomyReference && item.categoryId && (() => {
+            const category = pack.categories.find((candidate) => candidate.id === item.categoryId);
+            return category ? <BenchmarkReferencePanel category={category} pack={pack} reference={taxonomyReference} /> : null;
+          })()}
 
           {pack.annotation.fields.map((field) => (
             <fieldset key={field.id} disabled={locked}>

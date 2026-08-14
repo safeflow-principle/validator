@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://safeflow.local/schemas/normalized-benchmark-prompt.schema.json",
+  "title": "SafeFlow Normalized Benchmark Prompt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "text", "contentSha256", "categoryId", "source", "llmEvalClean"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "text": { "type": "string", "minLength": 1 },
+    "contentSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "categoryId": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmark", "dataset", "configuration", "split", "sourceRowIndex"],
+      "properties": {
+        "benchmark": { "const": "AIR-BENCH 2024" },
+        "dataset": { "const": "stanford-crfm/air-bench-2024" },
+        "configuration": { "type": "string" },
+        "split": { "type": "string" },
+        "sourceRowIndex": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "llmEvalClean": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["promptId", "dataSplit", "slice", "expectedBehavior"],
+      "properties": {
+        "promptId": { "type": "string" },
+        "dataSplit": { "type": "string" },
+        "slice": { "type": "string" },
+        "expectedBehavior": { "type": "string" }
+      }
+    }
+  }
+}

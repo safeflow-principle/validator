@@ -10,6 +10,7 @@ import type {
   ValidationItem,
 } from "../core/types";
 import { DATABASE_NAME, DATABASE_SCHEMA, DATABASE_VERSION, STORE_NAMES, type StoreName } from "./schema";
+import type { LocalImportBundle } from "../import/buildBundle";
 
 type StoredBenchmarkPack = { key: string; pack: BenchmarkPack; installedAt: string };
 
@@ -24,6 +25,7 @@ export interface SafeFlowDatabase {
   putReferenceArtifact(value: ReferenceArtifact): Promise<void>;
   putBenchmarkPack(value: BenchmarkPack): Promise<void>;
   putImportRun(value: ImportRun): Promise<void>;
+  importProjectBundle(value: LocalImportBundle): Promise<void>;
   getBlindedItem(id: string): Promise<BlindedValidationItem | undefined>;
   getAnnotation(id: string): Promise<Annotation | undefined>;
 }
@@ -77,6 +79,23 @@ class BrowserSafeFlowDatabase implements SafeFlowDatabase {
   putJudgeArtifact(value: JudgeArtifact) { return this.put(STORE_NAMES.judgeArtifacts, value); }
   putReferenceArtifact(value: ReferenceArtifact) { return this.put(STORE_NAMES.referenceArtifacts, value); }
   putImportRun(value: ImportRun) { return this.put(STORE_NAMES.importRuns, value); }
+
+  async importProjectBundle(value: LocalImportBundle) {
+    const stores = [
+      STORE_NAMES.projects,
+      STORE_NAMES.validationItems,
+      STORE_NAMES.judgeArtifacts,
+      STORE_NAMES.referenceArtifacts,
+      STORE_NAMES.importRuns,
+    ];
+    const transaction = this.db.transaction(stores, "readwrite");
+    transaction.objectStore(STORE_NAMES.projects).add(value.project);
+    for (const item of value.items) transaction.objectStore(STORE_NAMES.validationItems).add(item);
+    for (const artifact of value.judgeArtifacts) transaction.objectStore(STORE_NAMES.judgeArtifacts).add(artifact);
+    for (const artifact of value.referenceArtifacts) transaction.objectStore(STORE_NAMES.referenceArtifacts).add(artifact);
+    transaction.objectStore(STORE_NAMES.importRuns).add(value.importRun);
+    await transactionDone(transaction);
+  }
 
   putBenchmarkPack(value: BenchmarkPack) {
     const stored: StoredBenchmarkPack = {

@@ -82,6 +82,9 @@ export interface ImportRun {
   status: "pending" | "complete" | "failed";
   itemCount: number;
   errors: string[];
+  warnings?: string[];
+  format?: string;
+  mapping?: Record<string, string>;
   createdAt: IsoTimestamp;
 }
 
@@ -136,8 +139,84 @@ export interface BenchmarkPack {
     notes: string[];
   };
   categories: BenchmarkCategory[];
+  reference?: {
+    genericScoringRules: ProvenancedText[];
+    categorySpecificRubricUnavailableText: string;
+  };
   annotation: {
     instructions: ProvenancedText[];
     fields: AnnotationField[];
+  };
+}
+
+export type BenchmarkSourceAuthority =
+  | "official-air-bench-dataset"
+  | "official-air-2024-paper"
+  | "llm_eval_clean-derived"
+  | "safeflow-derived";
+
+export interface NormalizedTaxonomyLevel {
+  id: string;
+  name: string;
+  authority: BenchmarkSourceAuthority;
+  sourceField?: string;
+}
+
+export interface NormalizedTaxonomyAxisValue {
+  id: string;
+  sourceName: string;
+  displayName: string;
+  sourceAuthority: "official-air-bench-dataset";
+  displayAuthority: "official-air-bench-dataset" | "safeflow-derived";
+}
+
+export interface NormalizedTaxonomyDimensionReference {
+  nodeId: string;
+  role: string;
+  displayLabel: string;
+  value: NormalizedTaxonomyAxisValue;
+}
+
+export type NormalizedLevel3Relationship =
+  | { kind: "single"; nodeId: string }
+  | { kind: "composite"; dimensions: [NormalizedTaxonomyDimensionReference, NormalizedTaxonomyDimensionReference] };
+
+export interface NormalizedTaxonomyLeaf {
+  categoryId: string;
+  promptCount: number;
+  level1: NormalizedTaxonomyLevel;
+  level2: NormalizedTaxonomyLevel;
+  /** Exact Level-3 encoding found in the source dataset, including 3940/4142. */
+  sourceLevel3: NormalizedTaxonomyLevel;
+  /** Reference into the separate 45-node conceptual Level-3 taxonomy. */
+  conceptualLevel3: NormalizedLevel3Relationship;
+  level4: NormalizedTaxonomyLevel;
+}
+
+export interface NormalizedTaxonomyAsset {
+  schemaVersion: "1.1";
+  benchmarkId: "air-bench-2024";
+  conceptualLevel3Nodes: NormalizedTaxonomyLevel[];
+  leaves: NormalizedTaxonomyLeaf[];
+}
+
+export interface NormalizedBenchmarkPrompt {
+  schemaVersion: "1.0";
+  id: string;
+  text: string;
+  contentSha256: string;
+  categoryId: string;
+  source: {
+    benchmark: "AIR-BENCH 2024";
+    dataset: "stanford-crfm/air-bench-2024";
+    configuration: string;
+    split: string;
+    sourceRowIndex: number;
+  };
+  llmEvalClean: {
+    promptId: string;
+    dataSplit: string;
+    slice: string;
+    expectedBehavior: string;
   };
 }

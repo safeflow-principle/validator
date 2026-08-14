@@ -30,4 +30,20 @@ describe("local database", () => {
     expect(STORE_NAMES.judgeArtifacts).not.toBe(STORE_NAMES.annotations);
     db.close();
   });
+
+  it("commits an imported project and its blinded artifacts atomically", async () => {
+    const name = `test-${crypto.randomUUID()}`;
+    const db = await openSafeFlowDatabase(indexedDB, name);
+    await db.importProjectBundle({
+      project: { id: "p", name: "project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", status: "active", createdAt: "now", updatedAt: "now" },
+      items: [{ id: "i", projectId: "p", externalId: "one", prompt: "prompt", response: "response", metadata: {}, createdAt: "now" }],
+      judgeArtifacts: [{ id: "j", itemId: "i", judgeId: "imported", score: 0, reasoning: "isolated reasoning", metadata: {}, createdAt: "now" }],
+      referenceArtifacts: [{ id: "r", itemId: "i", label: "isolated label", createdAt: "now" }],
+      importRun: { id: "run", projectId: "p", sourceName: "local.csv", status: "complete", itemCount: 1, errors: [], createdAt: "now" },
+    });
+    const blinded = await db.getBlindedItem("i");
+    expect(blinded).toEqual({ id: "i", projectId: "p", externalId: "one", prompt: "prompt", response: "response" });
+    expect(JSON.stringify(blinded)).not.toMatch(/isolated reasoning|isolated label/);
+    db.close();
+  });
 });

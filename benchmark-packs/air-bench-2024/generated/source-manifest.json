@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "importerVersion": "1.1.0",
+  "benchmark": "AIR-BENCH 2024",
+  "officialSources": {
+    "dataset": "https://huggingface.co/datasets/stanford-crfm/air-bench-2024",
+    "paper": "https://arxiv.org/abs/2407.17436"
+  },
+  "inputArtifacts": [
+    {
+      "role": "llm_eval_clean PromptSpec export",
+      "fileName": "airbench_default_prompt_set.json",
+      "sha256": "41ac31e09575e7ebb9fecb699e11a7fb571c547a7739941363218ee9e906f396",
+      "rows": 5694
+    },
+    {
+      "role": "llm_eval_clean flattened validation prompts",
+      "fileName": "airbench_default_validation.jsonl",
+      "sha256": "e77b113c916ca14ecb9fb53e7ab76362a0561edbb6236e4df249a99d5758b951",
+      "rows": 5694
+    }
+  ],
+  "counts": {
+    "prompts": 5694,
+    "uniquePromptIds": 5694,
+    "uniquePromptTexts": 5692,
+    "duplicateTextGroups": 2,
+    "level1": 4,
+    "level2": 16,
+    "observedLevel3Values": 43,
+    "officialConceptualLevel3Nodes": 45,
+    "level4": 314
+  },
+  "fieldProvenance": {
+    "officialAirBenchDataset": {
+      "text": "prompt",
+      "categoryId": "cate-idx",
+      "level2Name": "l2-name",
+      "level3Name": "l3-name",
+      "level4Name": "l4-name"
+    },
+    "llmEvalCleanRenamedCopies": {
+      "text": "text",
+      "categoryId": "airbench_cate_idx",
+      "level2Name": "airbench_l2",
+      "level3Name": "airbench_l3",
+      "level4Name": "airbench_l4"
+    },
+    "llmEvalCleanDerivedAliases": {
+      "category": "copy of airbench_l2",
+      "subcategory": "copy of airbench_l3",
+      "workflow": "copy of airbench_l4",
+      "intent": "copy of airbench_cate_idx",
+      "prompt_id": "cate-idx plus global source row index, separated by ::",
+      "expected_behavior": "pipeline label; constant refuse in these artifacts",
+      "slice": "pipeline label; constant stress in these artifacts",
+      "data_split": "pipeline split label; constant airbench_default_test in these artifacts"
+    },
+    "safeFlowDerived": {
+      "id": "namespaced llm_eval_clean prompt_id",
+      "contentSha256": "SHA-256 of exact prompt text",
+      "level1": "paper-defined Level 1 mapped from the official Level 2 numeric index",
+      "conceptualLevel3": "45-node paper taxonomy represented separately from the 43 source encodings",
+      "compositeAxes": "3940 resolves to activity by protected characteristic; 4142 resolves to unauthorized action by sensitive-data type"
+    }
+  },
+  "knownDiscrepancies": [
+    "The paper reports 45 Level 3 categories; the dataset exposes 43 Level 3 string values because IDs 39/40 and 41/42 are combined.",
+    "The paper describes 5,694 unique test cases; these artifacts contain 5,694 unique IDs but 5,692 unique prompt texts.",
+    "The paper describes 15-30 prompts per Level 4 category; four category IDs contain 12 rows in these artifacts.",
+    "The prompt-space HTML reads legacy top-level taxonomy keys and therefore displays blank L2/L3/L4 metadata despite nested metadata being present."
+  ]
+}

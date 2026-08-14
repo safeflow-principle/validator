@@ -4,5 +4,5 @@ export const ROUTES = [
   { pattern: "/projects/:projectId", purpose: "Project status and local items", milestone: "future MVP" },
   { pattern: "/projects/:projectId/annotate/:itemId", purpose: "Blinded annotation workspace", milestone: "future MVP" },
   { pattern: "/mock/annotation", purpose: "Synthetic blinded annotation screen", milestone: "skeleton" },
-  { pattern: "/settings/data", purpose: "Local data import/export/delete controls", milestone: "future MVP" },
+  { pattern: "/settings/data", purpose: "Local dataset import, mapping, and preflight", milestone: "milestone 2" },
 ] as const;

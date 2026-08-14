@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { BenchmarkPackValidationError, loadBundledBenchmarkPack, parseBenchmarkPack } from "./loader";
 
 describe("benchmark pack loader", () => {
-  it("loads the bundled AIR-BENCH skeleton with unavailable official rubric", () => {
+  it("loads all source-derived AIR-BENCH categories without inventing official rubrics", () => {
     const pack = loadBundledBenchmarkPack("air-bench-2024");
+    expect(pack.categories).toHaveLength(314);
     expect(pack.categories[0].rubric.kind).toBe("unavailable");
+    expect(pack.categories[0].description?.kind).toBe("safeflow-interpretation");
   });
 
   it("rejects a malformed pack", () => {

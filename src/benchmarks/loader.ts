@@ -19,7 +19,7 @@ export function parseBenchmarkPack(value: unknown): BenchmarkPack {
       (validate.errors ?? []).map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`),
     );
   }
-  return structuredClone(value) as BenchmarkPack;
+  return structuredClone(value) as unknown as BenchmarkPack;
 }
 
 const bundledPacks: Readonly<Record<string, unknown>> = {

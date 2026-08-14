@@ -9,6 +9,7 @@ Uploaded prompts, model responses, automated-judge outputs, annotations, referen
 - Runtime state: browser memory for the active view.
 - Durable state: IndexedDB database `safeflow-human-validator` on the current browser profile and origin.
 - Application assets: locally served JavaScript and CSS bundles.
+- Dataset import: browser `File.text()` into memory, followed by explicit IndexedDB persistence after preflight.
 
 There is no cloud database, server-side file store, remote model call, telemetry SDK, remote logger, analytics tracker, error-reporting service, or external font request.
 
@@ -23,6 +24,8 @@ During active human validation, the UI receives only:
 - the current validator's annotation.
 
 It does not receive judge scores or reasoning, reference labels, or other validators' annotations. These values use separate entity types and IndexedDB object stores. The annotation component has no props for them, and `getBlindedItem()` returns a newly constructed narrow object. No CSS concealment is used.
+
+The import pipeline creates `ValidationItem`, `JudgeArtifact`, and `ReferenceArtifact` records separately. Mapped judge reasoning, scores, and reference labels are never copied into validation-item metadata. Unmapped source metadata is persisted with the item for auditability, but `getBlindedItem()` excludes metadata structurally.
 
 ## Network policy
 

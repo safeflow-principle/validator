@@ -35,8 +35,8 @@ Enter the database password only at the CLI prompt. Do not save it in this repos
 ## Checkpoint 3 — configure authentication
 
 1. Open **Authentication → URL Configuration**.
-2. Set the Site URL to the temporary Vercel production URL initially. Replace it with `https://validator.safeflow.ai` after the domain is connected.
-3. Add redirect URLs for `http://localhost:5173/cloud`, the Vercel preview pattern you intend to use, and `https://validator.safeflow.ai/cloud`.
+2. Set the Site URL to the temporary Vercel production URL initially. Replace it with `https://validator.safeflow.app` after the domain is connected.
+3. Add redirect URLs for `http://localhost:5173/cloud`, the Vercel preview pattern you intend to use, and `https://validator.safeflow.app/cloud`.
 4. Keep open public sign-up disabled.
 5. In **Authentication → Users**, invite the initial owner email.
 6. After accepting that email, sign into SafeFlow and create the first workspace.
@@ -64,9 +64,9 @@ Both values are available under the Supabase project's API settings. The publish
 
 ## Checkpoint 6 — custom domain
 
-1. In the Vercel project, open **Settings → Domains** and add `validator.safeflow.ai`.
+1. In the Vercel project, open **Settings → Domains** and add `validator.safeflow.app`.
 2. Vercel will show the exact DNS record required, normally a CNAME for the `validator` subdomain.
-3. Add that record in the DNS provider that hosts `safeflow.ai`; do not alter the existing apex/main-site records.
+3. Add that record in the DNS provider that hosts `safeflow.app`; do not alter the existing apex/main-site records.
 4. Wait for Vercel to show the domain as valid and HTTPS as issued.
 5. Update the Supabase Site URL and redirect allow-list to the final domain.
 

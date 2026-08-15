@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const schema = readFileSync(resolve(process.cwd(), "supabase/migrations/202608140001_cloud_workspaces.sql"), "utf8");
 const operations = readFileSync(resolve(process.cwd(), "supabase/migrations/202608140002_cloud_operations.sql"), "utf8");
+const archiveImport = readFileSync(resolve(process.cwd(), "supabase/migrations/202608140005_finalized_archive_import.sql"), "utf8");
 
 describe("cloud database security migrations", () => {
   it("enables RLS on every exposed research table", () => {
@@ -24,5 +25,15 @@ describe("cloud database security migrations", () => {
     expect(operations).toContain("function public.create_judge_analysis_report");
     expect(operations.match(/Owner access required/g)?.length).toBeGreaterThanOrEqual(6);
     expect(schema).toMatch(/revoke insert, update, delete on public\.human_validation_finalizations/);
+  });
+
+  it("copies finalized archives atomically while preserving recorded hashes", () => {
+    expect(archiveImport).toContain("create function public.create_cloud_project_archive_copy");
+    expect(archiveImport).toContain("snapshot_sha256");
+    expect(archiveImport).toContain("judge_artifact_set_sha256");
+    expect(archiveImport).toContain("analysis_sha256");
+    expect(archiveImport).toContain("report_sha256");
+    expect(archiveImport).toContain("Analysis does not reference the imported finalization hash");
+    expect(archiveImport).toContain("Report does not reference the imported analysis hash");
   });
 });

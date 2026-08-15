@@ -33,7 +33,7 @@ end $$;
 
 create function private.annotation_state_token(target_project_id text) returns text
 language sql stable security definer set search_path = '' as $$
-  select encode(digest(coalesce(string_agg(a.id::text || ':' || a.revision::text || ':' || a.status, '|' order by a.id), ''), 'sha256'), 'hex')
+  select pg_catalog.encode(extensions.digest(coalesce(string_agg(a.id::text || ':' || a.revision::text || ':' || a.status, '|' order by a.id), ''), 'sha256'), 'hex')
   from public.annotations a where a.project_id = target_project_id
 $$;
 

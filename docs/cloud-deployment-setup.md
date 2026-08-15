@@ -74,6 +74,10 @@ Both values are available under the Supabase project's API settings. The publish
 
 For the first release, use **Supabase Authentication → Users → Invite user** to send the Auth invitation. Once the user has accepted, an owner can add that existing email to the SafeFlow workspace as `RESEARCHER`. This two-step flow avoids embedding an administrative Auth secret in the browser. A server-side invitation function that combines both steps is deferred.
 
+## Finalized local project migration
+
+The explicit **Create Cloud Copy** action verifies every local finalization, judge analysis, and report hash before making a single transactional archive-import call. The database preserves the immutable snapshot JSON and recorded hashes, checks the finalization → analysis → report references, and records a content-minimal migration event. The local project remains unchanged. Historical snapshot provenance may still say `localOnly: true`; that describes where the immutable artifact was originally created and is intentionally not rewritten because doing so would invalidate its hash.
+
 ## Verification checklist
 
 - Local projects open while signed out and no request is made to Supabase.
@@ -83,4 +87,3 @@ For the first release, use **Supabase Authentication → Users → Invite user**
 - Finalization, unblinding, and report creation use RPCs and produce audit events.
 - Production JavaScript contains no service-role/secret key.
 - The generated CSP permits only the configured Supabase HTTPS/WebSocket origin in addition to the app origin.
-

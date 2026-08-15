@@ -45,10 +45,10 @@ export function ProjectsPage() {
 
   return (
     <main className="project-shell">
-      <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a className="primary-link compact" href="/settings/data">Import dataset</a></header>
-      <span className="eyebrow">Persistent Local mode</span>
+      <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><div className="card-actions"><a className="secondary-link button-link" href="/cloud">Cloud Workspace</a><a className="primary-link compact" href="/settings/data">Import dataset</a></div></header>
+      <span className="eyebrow">LOCAL</span>
       <h1>Projects</h1>
-      <p className="page-intro">All projects and annotations remain in this browser profile.</p>
+      <p className="page-intro">Project data remains in this browser and is not transmitted to SafeFlow or third parties.</p>
       <section className="backup-restore-card">
         <div><strong>Restore a local project backup</strong><p>Imports a versioned <code>.safeflow.json</code> file entirely in this browser.</p></div>
         <label className="secondary-link button-link file-button">
@@ -63,7 +63,7 @@ export function ProjectsPage() {
         <div className="project-list">
           {projects.map((summary) => (
             <article className="project-card" key={summary.project.id}>
-              <div><span className="status-pill">{summary.project.status}</span><h2>{summary.project.name}</h2><p>{benchmarkName(summary.project.benchmarkPackId)} · {summary.sourceName}</p></div>
+              <div><span className="status-pill">LOCAL · {summary.project.status}</span><h2>{summary.project.name}</h2><p>{benchmarkName(summary.project.benchmarkPackId)} · {summary.sourceName}</p></div>
               <dl className="project-stats">
                 <div><dt>Items</dt><dd>{summary.progress.total}</dd></div>
                 <div><dt>Annotated</dt><dd>{summary.progress.submitted}</dd></div>
@@ -74,6 +74,7 @@ export function ProjectsPage() {
               <p className="last-activity">Last activity {new Date(summary.lastActivityAt).toLocaleString()}</p>
               <div className="card-actions">
                 <a className="secondary-link button-link" href={`/projects/${summary.project.id}`}>Open</a>
+                <a className="secondary-link button-link" href={`/projects/${summary.project.id}/cloud-copy`}>Create Cloud Copy</a>
                 <a className="primary-link button-link" href={summary.project.status === "UNBLINDED" ? `/projects/${summary.project.id}` : summary.project.status === "HUMAN_FINALIZED" ? `/projects/${summary.project.id}/finalized` : summary.project.status === "HUMAN_COMPLETE" ? `/projects/${summary.project.id}/review` : `/projects/${summary.project.id}/annotate`}>{summary.project.status === "UNBLINDED" ? "View comparison" : summary.project.status === "HUMAN_FINALIZED" ? "View finalized results" : "Resume validation"}</a>
                 <button className="danger-button" onClick={() => void deleteProject(summary)} type="button">Delete</button>
               </div>

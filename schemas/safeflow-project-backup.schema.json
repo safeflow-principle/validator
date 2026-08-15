@@ -74,6 +74,8 @@
       "properties": {
         "id": { "$ref": "#/$defs/nonEmpty" }, "name": { "$ref": "#/$defs/nonEmpty" },
         "benchmarkPackId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" },
+        "workspaceMode": { "enum": ["LOCAL", "CLOUD"] },
+        "workspaceId": { "$ref": "#/$defs/nonEmpty" }, "createdBy": { "$ref": "#/$defs/nonEmpty" }, "migratedFromLocalProjectId": { "$ref": "#/$defs/nonEmpty" },
         "status": { "enum": ["READY", "VALIDATING", "REVIEW", "HUMAN_COMPLETE", "HUMAN_FINALIZED", "UNBLINDED"] },
         "createdAt": { "$ref": "#/$defs/nonEmpty" }, "updatedAt": { "$ref": "#/$defs/nonEmpty" }
       }

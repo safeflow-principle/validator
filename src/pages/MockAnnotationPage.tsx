@@ -14,6 +14,7 @@ const project: Project = {
   name: "Synthetic validation study",
   benchmarkPackId: "air-bench-2024",
   benchmarkPackVersion: "0.0.1-skeleton",
+  workspaceMode: "LOCAL",
   status: "READY",
   createdAt: now,
   updatedAt: now,

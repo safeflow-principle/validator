@@ -34,6 +34,7 @@ export function buildLocalImportBundle(
     name: options.projectName.trim() || options.sourceName,
     benchmarkPackId: options.benchmarkPackId,
     benchmarkPackVersion: options.benchmarkPackVersion,
+    workspaceMode: "LOCAL",
     status: "READY",
     createdAt: now,
     updatedAt: now,

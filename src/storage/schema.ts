@@ -1,5 +1,5 @@
 export const DATABASE_NAME = "safeflow-human-validator";
-export const DATABASE_VERSION = 5;
+export const DATABASE_VERSION = 6;
 
 export const STORE_NAMES = {
   projects: "projects",

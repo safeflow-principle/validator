@@ -13,6 +13,11 @@ const AirBenchPracticePage = lazy(() => import("./pages/AirBenchPracticePage").t
 const AirBenchTrainingResultsPage = lazy(() => import("./pages/AirBenchTrainingResultsPage").then((module) => ({ default: module.AirBenchTrainingResultsPage })));
 const FinalizedHumanResultsPage = lazy(() => import("./pages/FinalizedHumanResultsPage").then((module) => ({ default: module.FinalizedHumanResultsPage })));
 const JudgeAnalysisPage = lazy(() => import("./pages/JudgeAnalysisPage").then((module) => ({ default: module.JudgeAnalysisPage })));
+const CloudWorkspacePage = lazy(() => import("./pages/CloudWorkspacePage").then((module) => ({ default: module.CloudWorkspacePage })));
+const CloudMigrationPage = lazy(() => import("./pages/CloudMigrationPage").then((module) => ({ default: module.CloudMigrationPage })));
+const CloudProjectDetailPage = lazy(() => import("./pages/CloudProjectPages").then((module) => ({ default: module.CloudProjectDetailPage })));
+const CloudProjectAnnotationPage = lazy(() => import("./pages/CloudProjectPages").then((module) => ({ default: module.CloudProjectAnnotationPage })));
+const CloudProjectReviewPage = lazy(() => import("./pages/CloudProjectPages").then((module) => ({ default: module.CloudProjectReviewPage })));
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }, { error?: string }> {
   state: { error?: string } = {};
@@ -39,6 +44,7 @@ function HomePage() {
       <h1>Independent human validation, kept on this device.</h1>
       <p>Import a local evaluation dataset, annotate blinded model responses, and resume your work entirely in this browser.</p>
       <a className="primary-link" href="/projects">Open local projects</a>
+      <a className="secondary-link" href="/cloud">Open Cloud Workspace</a>
       <a className="secondary-link" href="/training">Validator training</a>
       <a className="secondary-link" href="/settings/data">Import a local dataset</a>
       <a className="tertiary-link" href="/mock/annotation">Open synthetic demo</a>
@@ -55,6 +61,13 @@ export function App() {
   if (path === "/mock/annotation") return <RoutedPage><MockAnnotationPage /></RoutedPage>;
   if (path === "/settings/data") return <RoutedPage><DatasetImportPage /></RoutedPage>;
   if (path === "/projects") return <RoutedPage><ProjectsPage /></RoutedPage>;
+  if (path === "/cloud") return <RoutedPage><CloudWorkspacePage /></RoutedPage>;
+  const cloudReview = path.match(/^\/cloud\/projects\/([^/]+)\/review$/);
+  if (cloudReview) return <RoutedPage><CloudProjectReviewPage projectId={decodeURIComponent(cloudReview[1])} /></RoutedPage>;
+  const cloudAnnotation = path.match(/^\/cloud\/projects\/([^/]+)\/annotate$/);
+  if (cloudAnnotation) return <RoutedPage><CloudProjectAnnotationPage projectId={decodeURIComponent(cloudAnnotation[1])} /></RoutedPage>;
+  const cloudProject = path.match(/^\/cloud\/projects\/([^/]+)$/);
+  if (cloudProject) return <RoutedPage><CloudProjectDetailPage projectId={decodeURIComponent(cloudProject[1])} /></RoutedPage>;
   if (path === "/training") return <RoutedPage><TrainingHomePage /></RoutedPage>;
   if (path === "/training/air-bench-2024") return <RoutedPage><AirBenchTrainingIntroPage /></RoutedPage>;
   if (path === "/training/air-bench-2024/practice") return <RoutedPage><AirBenchPracticePage /></RoutedPage>;
@@ -67,6 +80,8 @@ export function App() {
   if (finalized) return <RoutedPage><FinalizedHumanResultsPage projectId={decodeURIComponent(finalized[1])} /></RoutedPage>;
   const analysis = path.match(/^\/projects\/([^/]+)\/analysis\/([^/]+)$/);
   if (analysis) return <RoutedPage><JudgeAnalysisPage projectId={decodeURIComponent(analysis[1])} analysisId={decodeURIComponent(analysis[2])} /></RoutedPage>;
+  const migration = path.match(/^\/projects\/([^/]+)\/cloud-copy$/);
+  if (migration) return <RoutedPage><CloudMigrationPage projectId={decodeURIComponent(migration[1])} /></RoutedPage>;
   const project = path.match(/^\/projects\/([^/]+)$/);
   if (project) return <RoutedPage><ProjectDetailPage projectId={decodeURIComponent(project[1])} /></RoutedPage>;
   return <HomePage />;

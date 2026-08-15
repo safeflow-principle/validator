@@ -95,7 +95,7 @@ describe("SafeFlow project backup", () => {
       schemaVersion: "1.0", kind: "safeflow-project-backup", exportedAt: "now",
       provenance: { application: "SafeFlow Human Validator", storageMode: "persistent-local", source: "local-browser-project-export" },
       workflow: {
-        project: { id: "p", name: "p", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "x", status: "VALIDATING", createdAt: "now", updatedAt: "now" },
+        project: { id: "p", name: "p", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "x", workspaceMode: "LOCAL", status: "VALIDATING", createdAt: "now", updatedAt: "now" },
         source: { fileName: "x.csv", importRuns: [] },
         benchmark: { packId: "air-bench-2024", packVersion: "x", rubricVersion: "x", pack: loadBundledBenchmarkPack("air-bench-2024") },
         progress: { total: 1, unseen: 0, drafts: 1, submitted: 0, flagged: 0, lowConfidence: 0, skipped: 0, percentComplete: 0 },

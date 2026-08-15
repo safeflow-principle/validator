@@ -5,7 +5,7 @@ import type { HumanFinalizationSourceRecords } from "./types";
 export function finalizationSource(count = 3): HumanFinalizationSourceRecords {
   const benchmarkPack = loadBundledBenchmarkPack("air-bench-2024");
   const project: Project = {
-    id: "final-project", name: "Finalization fixture", benchmarkPackId: benchmarkPack.id, benchmarkPackVersion: benchmarkPack.version,
+    id: "final-project", name: "Finalization fixture", benchmarkPackId: benchmarkPack.id, benchmarkPackVersion: benchmarkPack.version, workspaceMode: "LOCAL",
     status: "HUMAN_COMPLETE", createdAt: "2026-08-14T20:00:00.000Z", updatedAt: "2026-08-14T21:00:00.000Z",
   };
   const items: ValidationItem[] = Array.from({ length: count }, (_, index) => ({

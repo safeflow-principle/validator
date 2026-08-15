@@ -6,31 +6,36 @@ import { loadBundledBenchmarkPack } from "../benchmarks/loader";
 import { buildTaxonomyReferenceView } from "../benchmarks/taxonomyReference";
 import type { Annotation, BlindedValidationItem, ProjectDetail } from "../core/types";
 import { findResumeItemId } from "../projects/progress";
-import { openSafeFlowDatabase, type SafeFlowDatabase } from "../storage/database";
+import { openSafeFlowDatabase } from "../storage/database";
 import { LOCAL_VALIDATOR_ID } from "../core/constants";
+import { IndexedDbAnnotationRepository, type AnnotationRepository } from "../repositories/annotationRepository";
 import type { HumanValidationFinalization } from "../finalization/types";
 
-export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
+async function openLocalAnnotationRepository(): Promise<AnnotationRepository> {
+  return new IndexedDbAnnotationRepository(await openSafeFlowDatabase(), LOCAL_VALIDATOR_ID);
+}
+
+export function ProjectAnnotationPage({ projectId, repositoryFactory = openLocalAnnotationRepository, projectBasePath = "/projects" }: { projectId: string; repositoryFactory?: () => Promise<AnnotationRepository>; projectBasePath?: string }) {
   const [state, dispatch] = useReducer(annotationTransition, initialAnnotationState);
   const [items, setItems] = useState<BlindedValidationItem[]>([]);
   const [detail, setDetail] = useState<ProjectDetail>();
   const [activeItemId, setActiveItemId] = useState<string>();
   const [finalization, setFinalization] = useState<HumanValidationFinalization>();
   const annotations = useRef(new Map<string, Annotation>());
-  const database = useRef<SafeFlowDatabase | undefined>(undefined);
+  const database = useRef<AnnotationRepository | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
-    void openSafeFlowDatabase().then(async (db) => {
+    void repositoryFactory().then(async (db) => {
       database.current = db;
       const [projectDetail, projectItems, projectAnnotations] = await Promise.all([
         db.getProjectDetail(projectId), db.getBlindedProjectItems(projectId), db.getProjectAnnotations(projectId),
       ]);
       if (!projectDetail) throw new Error("Project not found.");
       if (projectDetail.project.status === "HUMAN_FINALIZED" || projectDetail.project.status === "UNBLINDED") {
-        const latest = await db.getLatestHumanValidationFinalization(projectId);
-        if (!latest) throw new Error("Finalized project is missing its human snapshot.");
-        if (!cancelled) { setDetail(projectDetail); setFinalization(latest); }
+        const latest = await db.getLatestHumanValidationFinalization?.(projectId);
+        if (latest && !cancelled) { setDetail(projectDetail); setFinalization(latest); return; }
+        window.location.replace(`${projectBasePath}/${projectId}`);
         return;
       }
       annotations.current = new Map(projectAnnotations.map((annotation) => [annotation.itemId, annotation]));
@@ -39,15 +44,16 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
         ? requested
         : findResumeItemId(projectItems, projectAnnotations);
       if (!itemId) {
-        window.location.replace(`/projects/${projectId}/review`);
+        window.location.replace(`${projectBasePath}/${projectId}/review`);
         return;
       }
       const now = new Date().toISOString();
+      const validatorId = await db.validatorId();
       const annotation = annotations.current.get(itemId) ?? {
-        id: `${itemId}:${LOCAL_VALIDATOR_ID}`,
+        id: `${itemId}:${validatorId}`,
         itemId,
         projectId,
-        validatorId: LOCAL_VALIDATOR_ID,
+        validatorId,
         benchmarkPackId: projectDetail.project.benchmarkPackId,
         benchmarkPackVersion: projectDetail.project.benchmarkPackVersion,
         rubricVersion: projectDetail.project.benchmarkPackVersion,
@@ -65,9 +71,9 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
         dispatch({ type: "LOADED", annotation });
         if (projectDetail.project.status !== "HUMAN_COMPLETE") await db.setProjectStatus(projectId, "VALIDATING");
       }
-    }).catch(() => { if (!cancelled) window.location.replace(`/projects/${projectId}`); });
+    }).catch(() => { if (!cancelled) window.location.replace(`${projectBasePath}/${projectId}`); });
     return () => { cancelled = true; database.current?.close(); };
-  }, [projectId]);
+  }, [projectId, repositoryFactory, projectBasePath]);
 
   useEffect(() => {
     if (state.value !== "editing" || !state.dirty) return;
@@ -92,22 +98,22 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
       annotations.current.set(persisted.itemId, persisted);
       dispatch({ type: "SAVE_SUCCEEDED", annotation: persisted });
       const index = items.findIndex((item) => item.id === persisted.itemId);
-      if (intent === "draft-exit") window.location.assign(`/projects/${projectId}`);
-      else if (intent === "previous" && index > 0) window.location.assign(`/projects/${projectId}/annotate?item=${items[index - 1].id}`);
+      if (intent === "draft-exit") window.location.assign(`${projectBasePath}/${projectId}`);
+      else if (intent === "previous" && index > 0) window.location.assign(`${projectBasePath}/${projectId}/annotate?item=${items[index - 1].id}`);
       else if (intent === "submit") {
         const next = items.slice(index + 1).find((item) => annotations.current.get(item.id)?.status !== "submitted")
           ?? items.find((item) => annotations.current.get(item.id)?.status !== "submitted");
-        window.location.assign(next ? `/projects/${projectId}/annotate?item=${next.id}` : `/projects/${projectId}/review`);
+        window.location.assign(next ? `${projectBasePath}/${projectId}/annotate?item=${next.id}` : `${projectBasePath}/${projectId}/review`);
       }
-    }).catch((error: unknown) => dispatch({ type: "SAVE_FAILED", message: error instanceof Error ? error.message : "Local save failed." }));
-  }, [state.value === "saving" ? state.savingAnnotation : undefined, state.value === "saving" ? state.intent : undefined, items, projectId]);
+    }).catch((error: unknown) => dispatch({ type: "SAVE_FAILED", message: error instanceof Error ? error.message : "Save failed." }));
+  }, [state.value === "saving" ? state.savingAnnotation : undefined, state.value === "saving" ? state.intent : undefined, items, projectId, projectBasePath]);
 
   if ((detail?.project.status === "HUMAN_FINALIZED" || detail?.project.status === "UNBLINDED") && finalization) return <main className="project-shell locked-finalization">
-    <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href={`/projects/${projectId}`}>Back to Project</a></header>
+    <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href={`${projectBasePath}/${projectId}`}>Back to Project</a></header>
     <span className="status-pill">{detail.project.status}</span><h1>Human validation finalized</h1>
     <p>The human-validation results for this project are locked. Production annotation controls are unavailable.</p>
     <dl><div><dt>Finalized</dt><dd>{new Date(finalization.finalizedAt).toLocaleString()}</dd></div><div><dt>Snapshot</dt><dd className="hash-value">{finalization.snapshotHash.slice(0, 8)}…</dd></div></dl>
-    <div className="page-actions"><a className="primary-link" href={`/projects/${projectId}/finalized`}>View Finalized Human Results</a><a className="secondary-link button-link" href={`/projects/${projectId}`}>Back to Project</a></div>
+    <div className="page-actions"><a className="primary-link" href={`${projectBasePath}/${projectId}/finalized`}>View Finalized Human Results</a><a className="secondary-link button-link" href={`${projectBasePath}/${projectId}`}>Back to Project</a></div>
   </main>;
   if (state.value === "loading" || !detail || !activeItemId) return <main className="loading-screen"><p>Opening blinded validation item…</p></main>;
   const item = items.find((candidate) => candidate.id === activeItemId)!;

@@ -7,7 +7,7 @@ describe("human-only project review", () => {
   it("shows human fields and filters without exposing judge or reference artifacts", async () => {
     const database = await openSafeFlowDatabase();
     await database.clearAll();
-    await database.putProject({ id: "review-project", name: "Review project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", status: "VALIDATING", createdAt: "now", updatedAt: "now" });
+    await database.putProject({ id: "review-project", name: "Review project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", workspaceMode: "LOCAL", status: "VALIDATING", createdAt: "now", updatedAt: "now" });
     await database.putValidationItem({ id: "review-1", projectId: "review-project", externalId: "visible-id-1", prompt: "prompt one", response: "response one", categoryId: "1.1.1", metadata: { importSourceRow: 1 }, createdAt: "now" });
     await database.putValidationItem({ id: "review-2", projectId: "review-project", externalId: "visible-id-2", prompt: "prompt two", response: "response two", categoryId: "15.4142.55", metadata: { importSourceRow: 2 }, createdAt: "now" });
     await database.putAnnotation({ id: "human", itemId: "review-1", projectId: "review-project", validatorId: "local-validator", benchmarkPackId: "air-bench-2024", status: "submitted", answers: { score: 0.5, confidence: "Low", reasoning: "VISIBLE_HUMAN_REASON", "needs-review": true }, evidenceSpans: [{ start: 0, end: 8, text: "response" }], revision: 1, createdAt: "now", updatedAt: "now", submittedAt: "now" });

@@ -7,7 +7,7 @@ describe("real project annotation route blinding", () => {
   it("renders a repository-blinded item without judge, reference, or other-validator data", async () => {
     const database = await openSafeFlowDatabase();
     await database.clearAll();
-    await database.putProject({ id: "real-project", name: "Real imported project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", status: "READY", createdAt: "now", updatedAt: "now" });
+    await database.putProject({ id: "real-project", name: "Real imported project", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "test", workspaceMode: "LOCAL", status: "READY", createdAt: "now", updatedAt: "now" });
     await database.putValidationItem({ id: "real-item", projectId: "real-project", externalId: "synthetic-real-1", prompt: "VISIBLE_REAL_PROMPT", response: "VISIBLE_REAL_RESPONSE", categoryId: "14.3940.4", metadata: { secretMetadata: "ITEM_METADATA_SECRET", importSourceRow: 1 }, createdAt: "now" });
     await database.putJudgeArtifact({ id: "judge", itemId: "real-item", judgeId: "judge", score: 999, reasoning: "JUDGE_REASONING_SECRET", metadata: {}, createdAt: "now" });
     await database.putReferenceArtifact({ id: "reference", itemId: "real-item", label: "REFERENCE_LABEL_SECRET", createdAt: "now" });

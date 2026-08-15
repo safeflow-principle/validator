@@ -40,7 +40,11 @@ import { canonicalizeFinalizationPayload } from "../finalization/canonicalize";
 type StoredBenchmarkPack = { key: string; pack: BenchmarkPack; installedAt: string };
 
 function normalizeProject(value: Project | (Omit<Project, "status"> & { status: string })): Project {
-  return { ...value, status: ["READY", "VALIDATING", "REVIEW", "HUMAN_COMPLETE", "HUMAN_FINALIZED", "UNBLINDED"].includes(value.status) ? value.status as ProjectStatus : "READY" };
+  return {
+    ...value,
+    workspaceMode: value.workspaceMode === "CLOUD" ? "CLOUD" : "LOCAL",
+    status: ["READY", "VALIDATING", "REVIEW", "HUMAN_COMPLETE", "HUMAN_FINALIZED", "UNBLINDED"].includes(value.status) ? value.status as ProjectStatus : "READY",
+  };
 }
 
 function normalizeAnnotation(value: Annotation | (Omit<Annotation, "status" | "evidenceSpans"> & { status: string; evidenceSpans?: Annotation["evidenceSpans"]; finalizedAt?: string })): Annotation {
@@ -669,6 +673,17 @@ export function openSafeFlowDatabase(
             cursor.continue();
           };
           projectRequest.onerror = () => cursor.continue();
+        };
+      }
+      if (event.oldVersion < 6 && db.objectStoreNames.contains(STORE_NAMES.projects)) {
+        const projects = request.transaction!.objectStore(STORE_NAMES.projects);
+        const cursorRequest = projects.openCursor();
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) return;
+          const project = cursor.value as Partial<Project>;
+          if (!project.workspaceMode) cursor.update({ ...project, workspaceMode: "LOCAL" });
+          cursor.continue();
         };
       }
     };

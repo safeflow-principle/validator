@@ -1,5 +1,6 @@
 export type EntityId = string;
 export type IsoTimestamp = string;
+export type WorkspaceMode = "LOCAL" | "CLOUD";
 export type ProjectStatus = "READY" | "VALIDATING" | "REVIEW" | "HUMAN_COMPLETE" | "HUMAN_FINALIZED" | "UNBLINDED";
 
 export interface Project {
@@ -7,9 +8,30 @@ export interface Project {
   name: string;
   benchmarkPackId: string;
   benchmarkPackVersion: string;
+  workspaceMode: WorkspaceMode;
+  workspaceId?: EntityId;
+  createdBy?: EntityId;
+  migratedFromLocalProjectId?: EntityId;
   status: ProjectStatus;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
+}
+
+export type WorkspaceRole = "OWNER" | "RESEARCHER" | "VALIDATOR";
+
+export interface CloudWorkspace {
+  id: EntityId;
+  name: string;
+  createdBy: EntityId;
+  createdAt: IsoTimestamp;
+}
+
+export interface WorkspaceMember {
+  workspaceId: EntityId;
+  userId: EntityId;
+  role: WorkspaceRole;
+  invitedAt: IsoTimestamp;
+  acceptedAt?: IsoTimestamp;
 }
 
 export interface ValidationItem {

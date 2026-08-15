@@ -1,7 +1,12 @@
 export const ROUTES = [
   { pattern: "/", purpose: "Local welcome and project entry point", milestone: "skeleton" },
   { pattern: "/projects", purpose: "Local projects list and deletion", milestone: "workflow" },
+  { pattern: "/cloud", purpose: "Authenticated cloud workspace and cloud projects", milestone: "cloud workspaces" },
+  { pattern: "/cloud/projects/:projectId", purpose: "Cloud project detail and human progress", milestone: "cloud workspaces" },
+  { pattern: "/cloud/projects/:projectId/annotate", purpose: "Structurally blinded cloud annotation workflow", milestone: "cloud workspaces" },
+  { pattern: "/cloud/projects/:projectId/review", purpose: "Cloud human-only review", milestone: "cloud workspaces" },
   { pattern: "/projects/:projectId", purpose: "Project information and human-validation progress", milestone: "workflow" },
+  { pattern: "/projects/:projectId/cloud-copy", purpose: "Explicit confirmed Local-to-Cloud project copy", milestone: "cloud workspaces" },
   { pattern: "/projects/:projectId/annotate", purpose: "Blinded annotation workspace with persistent resume", milestone: "workflow" },
   { pattern: "/projects/:projectId/review", purpose: "Human-only annotation review", milestone: "workflow" },
   { pattern: "/projects/:projectId/finalized", purpose: "Read-only immutable finalized human results", milestone: "human finalization" },

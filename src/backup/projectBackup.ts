@@ -106,6 +106,7 @@ export function parseSafeFlowProjectBackup(value: unknown): SafeFlowProjectBacku
     schemaVersion: "1.3",
     workflow: {
       ...raw.workflow,
+      project: { ...raw.workflow.project, workspaceMode: raw.workflow.project.workspaceMode ?? "LOCAL" },
       humanValidationFinalizations: raw.workflow.humanValidationFinalizations ?? [],
       judgeAnalyses: raw.workflow.judgeAnalyses ?? [],
       judgeAnalysisReports: raw.workflow.judgeAnalysisReports ?? [],

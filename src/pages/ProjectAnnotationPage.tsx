@@ -121,5 +121,5 @@ export function ProjectAnnotationPage({ projectId, repositoryFactory = openLocal
   const pack = loadBundledBenchmarkPack(detail.project.benchmarkPackId);
   const leaf = item.categoryId ? airBenchTaxonomy.leaves.find((candidate) => candidate.categoryId === item.categoryId) : undefined;
   const taxonomyReference = leaf ? buildTaxonomyReferenceView(leaf, airBenchTaxonomy.conceptualLevel3Nodes) : undefined;
-  return <AnnotationScreen dispatch={dispatch} item={item} pack={pack} position={position} projectName={detail.project.name} state={state} submittedCount={detail.progress.submitted} taxonomyReference={taxonomyReference} total={items.length} />;
+  return <AnnotationScreen dispatch={dispatch} item={item} pack={pack} position={position} projectName={detail.project.name} state={state} submittedCount={detail.progress.submitted} taxonomyReference={taxonomyReference} total={items.length} workspaceMode={projectBasePath.startsWith("/cloud") ? "CLOUD" : "LOCAL"} />;
 }

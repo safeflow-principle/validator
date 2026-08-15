@@ -15,9 +15,10 @@ export interface AnnotationScreenProps {
   total?: number;
   projectName?: string;
   submittedCount?: number;
+  workspaceMode?: "LOCAL" | "CLOUD";
 }
 
-export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReference, position = 1, total = 1, projectName = "Synthetic research item", submittedCount = 0 }: AnnotationScreenProps) {
+export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReference, position = 1, total = 1, projectName = "Research item", submittedCount = 0, workspaceMode = "LOCAL" }: AnnotationScreenProps) {
   const annotation: Annotation = state.annotation;
   const navigationLocked = state.value === "saving";
   const inputLocked = state.value === "saving" && state.intent !== "autosave";
@@ -62,7 +63,7 @@ export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReferenc
           <progress aria-label="Human-validation completion" max={total} value={submittedCount} />
         </div>
         <div className="status-copy" role="status">
-          {state.value === "saving" ? "Saving…" : state.value === "save-error" ? "Save failed" : dirty ? "Unsaved changes" : "Saved locally"}
+          {state.value === "saving" ? "Saving…" : state.value === "save-error" ? "Save failed" : dirty ? "Unsaved changes" : workspaceMode === "CLOUD" ? "Saved to cloud" : "Saved locally"}
         </div>
       </div>
 
@@ -100,7 +101,7 @@ export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReferenc
               </ol>
             )}
           </article>
-          <p className="blind-note">Judge outputs, reference labels, and other annotations are excluded from this view.</p>
+          <p className="blind-note"><strong>Blinded validation:</strong> Automated judge results, reference labels, and other annotations are unavailable in this view.</p>
         </section>
 
         <section className="rubric-panel" aria-labelledby="annotation-heading">
@@ -110,6 +111,7 @@ export function AnnotationScreen({ item, pack, state, dispatch, taxonomyReferenc
           {pack.annotation.instructions.map((instruction, index) => <p className="instruction" key={index}>{instruction.text}</p>)}
 
           {taxonomyReference && category && <BenchmarkReferencePanel category={category} pack={pack} reference={taxonomyReference} />}
+          {pack.id === "air-bench-2024" && <p className="context-help"><a href="/docs/air-bench">AIR-BENCH scoring guide</a></p>}
 
           {pack.annotation.fields.map((field) => (
             field.type === "text" ? (

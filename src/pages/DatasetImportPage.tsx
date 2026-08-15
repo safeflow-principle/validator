@@ -10,15 +10,10 @@ import { openSafeFlowDatabase } from "../storage/database";
 
 const pack = loadBundledBenchmarkPack("air-bench-2024");
 const knownCategories = new Set(pack.categories.map((category) => category.id));
-const mappingFields: Array<{ id: ImportField; label: string; required?: boolean; sensitive?: boolean }> = [
-  { id: "prompt", label: "Prompt (or use a recognized AIR-BENCH prompt ID)" },
-  { id: "response", label: "Assistant response", required: true },
-  { id: "externalId", label: "External item ID" },
-  { id: "benchmarkPromptId", label: "AIR-BENCH prompt ID (or map Prompt)" },
-  { id: "categoryId", label: "AIR-BENCH category ID" },
-  { id: "judgeScore", label: "Automated-judge score", sensitive: true },
-  { id: "judgeReasoning", label: "Automated-judge reasoning", sensitive: true },
-  { id: "referenceLabel", label: "Reference label", sensitive: true },
+const mappingGroups: Array<{ title: string; description?: string; fields: Array<{ id: ImportField; label: string; required?: boolean; sensitive?: boolean }> }> = [
+  { title: "Required", fields: [{ id: "prompt", label: "Prompt (or use a recognized AIR-BENCH prompt ID)" }, { id: "response", label: "Assistant response", required: true }] },
+  { title: "Benchmark metadata", fields: [{ id: "externalId", label: "Item ID" }, { id: "benchmarkPromptId", label: "AIR-BENCH prompt ID (or map Prompt)" }, { id: "categoryId", label: "AIR-BENCH category ID" }] },
+  { title: "Optional blinded comparison data", description: "Stored separately and unavailable during human validation.", fields: [{ id: "judgeScore", label: "Automated judge score", sensitive: true }, { id: "judgeReasoning", label: "Automated judge reasoning", sensitive: true }, { id: "referenceLabel", label: "Reference label", sensitive: true }] },
 ];
 
 export function DatasetImportPage() {
@@ -82,9 +77,10 @@ export function DatasetImportPage() {
   return (
     <main className="import-shell">
       <a className="wordmark" href="/">SafeFlow</a>
-      <span className="eyebrow">Milestone 2 · local dataset import</span>
-      <h1>Map and preflight a dataset</h1>
-      <p className="import-intro">The file is read in this browser. Nothing is uploaded or transmitted.</p>
+      <span className="eyebrow">Local Workspace</span>
+      <h1>Validate a Dataset</h1>
+      <p className="import-intro">Import evaluation results for blinded human review. Files are processed locally when using Local Workspace.</p>
+      <p><a href="/docs/dataset-format">Dataset format help</a></p>
 
       <section className="import-card">
         <h2>1. Choose a local file</h2>
@@ -98,11 +94,11 @@ export function DatasetImportPage() {
         <>
           <section className="import-card">
             <h2>2. Map fields</h2>
-            <p className="field-help">Judge and reference fields are stored in isolated records and never embedded in annotation items.</p>
-            <div className="mapping-grid">
-              {mappingFields.map((field) => (
+            <p className="field-help">Choose which uploaded column supplies each SafeFlow field. Only the assistant response is always required; a recognized AIR-BENCH prompt ID can supply missing canonical prompt metadata.</p>
+            {mappingGroups.map((group) => <section className="mapping-group" key={group.title}><h3>{group.title}</h3>{group.description && <p className="field-help"><span className="blind-badge">Blinded</span> {group.description}</p>}<div className="mapping-grid">
+              {group.fields.map((field) => (
                 <label key={field.id}>
-                  <span>{field.label}{field.required ? " *" : ""}{field.sensitive && <small> Blinded field</small>}</span>
+                  <span>{field.label}{field.required ? " *" : ""}{field.sensitive && <small> · BLINDED</small>}</span>
                   <select
                     aria-label={field.label}
                     onChange={(event) => setMapping((current) => ({ ...current, [field.id]: event.target.value || undefined }))}
@@ -113,13 +109,14 @@ export function DatasetImportPage() {
                   </select>
                 </label>
               ))}
-            </div>
+            </div></section>)}
           </section>
 
           <section className="import-card">
             <h2>3. Preflight</h2>
             {preflight && (
               <>
+                <div className={preflight.ready ? "preflight-heading ready" : "preflight-heading blocked"}><strong>{preflight.ready ? "READY TO IMPORT" : "CANNOT IMPORT"}</strong><span>{preflight.ready ? `${preflight.summary.sourceRows} rows ready` : `${preflight.summary.errors} row issue${preflight.summary.errors === 1 ? "" : "s"} require attention`}</span></div>
                 <div className="preflight-summary">
                   <span><strong>{preflight.summary.sourceRows}</strong> source rows</span>
                   <span><strong>{preflight.summary.categorizedRows}</strong> categorized</span>
@@ -135,7 +132,7 @@ export function DatasetImportPage() {
                       </li>
                     ))}
                   </ul>
-                ) : <p className="preflight-ready">Ready to import locally.</p>}
+                ) : <p className="preflight-ready">The dataset is ready to create as a local validation project.</p>}
               </>
             )}
           </section>

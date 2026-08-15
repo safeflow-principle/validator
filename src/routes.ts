@@ -1,5 +1,7 @@
 export const ROUTES = [
-  { pattern: "/", purpose: "Local welcome and project entry point", milestone: "skeleton" },
+  { pattern: "/", purpose: "SafeFlow Human Validator welcome and workflow entry points", milestone: "public launch" },
+  { pattern: "/docs", purpose: "SafeFlow Validator documentation index", milestone: "public launch" },
+  { pattern: "/docs/:page", purpose: "Operational validation documentation", milestone: "public launch" },
   { pattern: "/projects", purpose: "Local projects list and deletion", milestone: "workflow" },
   { pattern: "/cloud", purpose: "Authenticated cloud workspace and cloud projects", milestone: "cloud workspaces" },
   { pattern: "/cloud/projects/:projectId", purpose: "Cloud project detail and human progress", milestone: "cloud workspaces" },

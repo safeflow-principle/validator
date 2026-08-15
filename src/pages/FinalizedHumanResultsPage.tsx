@@ -54,6 +54,7 @@ export function FinalizedHumanResultsPage({ projectId }: { projectId: string }) 
     <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href={`/projects/${projectId}`}>Project overview</a></header>
     <span className="eyebrow">Finalized Human Results · read only</span><h1>Human validation finalized</h1>
     <p className="page-intro">This view reads the immutable human finalization snapshot. Automated-judge and reference artifacts remain isolated.</p>
+    <p className="context-help"><a href="/docs/methodology">Why are judge results hidden?</a></p>
     <div className="page-actions">{projectStatus === "UNBLINDED" ? <a className="primary-link" href={`/projects/${projectId}`}>View Judge Comparison</a> : <button className="primary-button" onClick={() => setConfirmingUnblind(true)} type="button">Compare With Automated Judge</button>}</div>
     <section className="results-hero finalized-summary">
       <div><strong>{finalization.annotations.length}</strong><span>Finalized items</span></div>
@@ -75,6 +76,7 @@ export function FinalizedHumanResultsPage({ projectId }: { projectId: string }) 
       <span className="eyebrow">Permanent workflow transition</span><h2 id="unblind-title">Compare with the automated judge?</h2>
       <p>This intentionally unblinds automated-judge scores and reasoning for human finalization <code>{finalization.id}</code>. The frozen human labels will not change.</p>
       <p>The comparison will become an immutable local analysis run tied to human snapshot <code>{finalization.snapshotHash.slice(0, 12)}…</code>.</p>
+      <p><a href="/docs/methodology">Why are judge results hidden?</a></p>
       <label className="confirmation-check"><input checked={unblindAcknowledged} onChange={(event) => setUnblindAcknowledged(event.target.checked)} type="checkbox" /> I understand that this specific finalized human snapshot will be unblinded.</label>
       {unblindError && <p className="error-banner" role="alert">{unblindError}</p>}
       <div className="page-actions"><button className="secondary-button" disabled={unblinding} onClick={() => setConfirmingUnblind(false)} type="button">Cancel</button><button className="primary-button" disabled={!unblindAcknowledged || unblinding} onClick={() => void unblind()} type="button">{unblinding ? "Creating analysis…" : "Unblind and Compare"}</button></div>

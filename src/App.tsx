@@ -1,5 +1,6 @@
 import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
-import { ROUTES } from "./routes";
+import { AppChrome } from "./components/AppChrome";
+import { WelcomePage } from "./pages/WelcomePage";
 
 const MockAnnotationPage = lazy(() => import("./pages/MockAnnotationPage").then((module) => ({ default: module.MockAnnotationPage })));
 const DatasetImportPage = lazy(() => import("./pages/DatasetImportPage").then((module) => ({ default: module.DatasetImportPage })));
@@ -18,6 +19,7 @@ const CloudMigrationPage = lazy(() => import("./pages/CloudMigrationPage").then(
 const CloudProjectDetailPage = lazy(() => import("./pages/CloudProjectPages").then((module) => ({ default: module.CloudProjectDetailPage })));
 const CloudProjectAnnotationPage = lazy(() => import("./pages/CloudProjectPages").then((module) => ({ default: module.CloudProjectAnnotationPage })));
 const CloudProjectReviewPage = lazy(() => import("./pages/CloudProjectPages").then((module) => ({ default: module.CloudProjectReviewPage })));
+const DocsPage = lazy(() => import("./pages/DocsPage").then((module) => ({ default: module.DocsPage })));
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }, { error?: string }> {
   state: { error?: string } = {};
@@ -34,30 +36,14 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { error?: st
 }
 
 function RoutedPage({ children }: { children: ReactNode }) {
-  return <RouteErrorBoundary><Suspense fallback={<main className="loading-screen"><p>Opening local workspace…</p></main>}>{children}</Suspense></RouteErrorBoundary>;
-}
-
-function HomePage() {
-  return (
-    <main className="home-shell">
-      <p className="eyebrow">SafeFlow research tooling</p>
-      <h1>Independent human validation, kept on this device.</h1>
-      <p>Import a local evaluation dataset, annotate blinded model responses, and resume your work entirely in this browser.</p>
-      <a className="primary-link" href="/projects">Open local projects</a>
-      <a className="secondary-link" href="/cloud">Open Cloud Workspace</a>
-      <a className="secondary-link" href="/training">Validator training</a>
-      <a className="secondary-link" href="/settings/data">Import a local dataset</a>
-      <a className="tertiary-link" href="/mock/annotation">Open synthetic demo</a>
-      <details>
-        <summary>Route map</summary>
-        <ul>{ROUTES.map((route) => <li key={route.pattern}><code>{route.pattern}</code> — {route.purpose}</li>)}</ul>
-      </details>
-    </main>
-  );
+  return <RouteErrorBoundary><AppChrome><Suspense fallback={<main className="loading-screen"><p>Opening SafeFlow…</p></main>}>{children}</Suspense></AppChrome></RouteErrorBoundary>;
 }
 
 export function App() {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
+  if (path === "/") return <RoutedPage><WelcomePage /></RoutedPage>;
+  const docPage = path.match(/^\/docs(?:\/(getting-started|dataset-format|air-bench|methodology|privacy|backup))?$/);
+  if (docPage) return <RoutedPage><DocsPage page={(docPage[1] ?? "index") as "index" | "getting-started" | "dataset-format" | "air-bench" | "methodology" | "privacy" | "backup"} /></RoutedPage>;
   if (path === "/mock/annotation") return <RoutedPage><MockAnnotationPage /></RoutedPage>;
   if (path === "/settings/data") return <RoutedPage><DatasetImportPage /></RoutedPage>;
   if (path === "/projects") return <RoutedPage><ProjectsPage /></RoutedPage>;
@@ -84,5 +70,5 @@ export function App() {
   if (migration) return <RoutedPage><CloudMigrationPage projectId={decodeURIComponent(migration[1])} /></RoutedPage>;
   const project = path.match(/^\/projects\/([^/]+)$/);
   if (project) return <RoutedPage><ProjectDetailPage projectId={decodeURIComponent(project[1])} /></RoutedPage>;
-  return <HomePage />;
+  return <RoutedPage><main className="project-shell"><p className="eyebrow">Page not found</p><h1>We couldn’t find that page.</h1><p><a href="/">Return to SafeFlow Human Validator</a></p></main></RoutedPage>;
 }

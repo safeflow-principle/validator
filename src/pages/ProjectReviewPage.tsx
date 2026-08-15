@@ -82,6 +82,7 @@ export function ProjectReviewPage({ projectId }: { projectId: string }) {
       {!finalized && complete && eligibility && <section className="detail-card finalization-card" aria-labelledby="finalization-heading">
         <span className="eyebrow">Human Validation Finalization</span><h2 id="finalization-heading">Create the immutable human record</h2>
         <p>Finalization freezes the human judgments used for later analysis. Changes to editable records cannot silently alter this snapshot.</p>
+        <p className="context-help"><a href="/docs/methodology">What does finalization do?</a></p>
         <dl className="finalization-summary">
           <div><dt>Source rows</dt><dd>{eligibility.summary.sourceRows}</dd></div>
           <div><dt>Excluded</dt><dd>{eligibility.summary.excluded}</dd></div>

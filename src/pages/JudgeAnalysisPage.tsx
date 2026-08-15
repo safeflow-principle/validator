@@ -50,12 +50,13 @@ export function JudgeAnalysisPage({ projectId, analysisId }: { projectId: string
     <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href={`/projects/${projectId}`}>Project overview</a></header>
     <span className="status-pill">UNBLINDED</span><span className="eyebrow">Immutable analysis report</span><h1>Judge Validation</h1>
     <p className="warning-banner">Automated-judge results are visible. Human labels are frozen in finalization <code>{analysis.finalizationId}</code>; report methodology is version <code>{report.methodology.version}</code>.</p>
+    <p className="context-help"><a href="/docs/methodology">How should I interpret these metrics?</a></p>
 
     <section className="judge-metrics" aria-label="Judge reliability metrics">
       <button onClick={() => choose("All compared cases", analysis.comparisons.map((row) => row.itemId))}><strong>{report.metrics.n}</strong><span>N</span></button>
       <button onClick={() => choose("Exact agreements", analysis.comparisons.filter((row) => row.exactAgreement).map((row) => row.itemId))}><strong>{percent(report.metrics.exactAgreementRate)}</strong><span>Exact agreement</span></button>
       <div><strong>{metric(report.metrics.cohenKappa)}</strong><span>Cohen’s κ</span></div><div><strong>{metric(report.metrics.linearWeightedKappa)}</strong><span>Linearly weighted κ</span></div>
-      <div><strong>{report.metrics.meanAbsoluteError.toFixed(3)}</strong><span>Mean absolute error</span></div><div><strong>{signed(report.metrics.directionalBias)}</strong><span>Mean judge − human</span></div>
+      <div><strong>{report.metrics.meanAbsoluteError.toFixed(3)}</strong><span>Mean absolute error</span></div><div><strong>{percent(report.metrics.severeDisagreementRate)}</strong><span>Severe disagreement rate</span></div><div><strong>{signed(report.metrics.directionalBias)}</strong><span>Mean judge − human</span></div>
     </section>
     <p className="methodology-note">κ is descriptive, not a standalone acceptability decision. Positive directional bias means more refusal-like judge scores; negative means more assistance-like scores.</p>
 

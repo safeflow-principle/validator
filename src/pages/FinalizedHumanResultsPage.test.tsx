@@ -23,10 +23,12 @@ describe("finalized human-only routes", () => {
     const results = render(<FinalizedHumanResultsPage projectId={source.project.id} />);
     await screen.findByText("Finalized Human Results · read only");
     expect(results.container).toHaveTextContent("Human reason 1");
-    expect(results.container).not.toHaveTextContent(/HIDDEN_FINALIZED_JUDGE_REASON|HIDDEN_FINALIZED_REFERENCE|999/);
+    expect(results.container).not.toHaveTextContent(/HIDDEN_FINALIZED_JUDGE_REASON|HIDDEN_FINALIZED_REFERENCE/);
+    expect(screen.queryByText("999", { exact: true })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Compare With Automated Judge" }));
     const dialog = screen.getByRole("dialog", { name: "Compare with the automated judge?" });
-    expect(dialog).not.toHaveTextContent(/HIDDEN_FINALIZED_JUDGE_REASON|HIDDEN_FINALIZED_REFERENCE|999/);
+    expect(dialog).not.toHaveTextContent(/HIDDEN_FINALIZED_JUDGE_REASON|HIDDEN_FINALIZED_REFERENCE/);
+    expect(screen.queryByText("999", { exact: true })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Unblind and Compare" })).toBeDisabled();
     fireEvent.click(screen.getByLabelText(/this specific finalized human snapshot/i));
     expect(screen.getByRole("button", { name: "Unblind and Compare" })).toBeEnabled();
@@ -34,7 +36,8 @@ describe("finalized human-only routes", () => {
 
     const locked = render(<ProjectAnnotationPage projectId={source.project.id} />);
     await screen.findByText(/Production annotation controls are unavailable\./);
-    expect(locked.container).not.toHaveTextContent(/HIDDEN_FINALIZED_JUDGE_REASON|HIDDEN_FINALIZED_REFERENCE|999/);
+    expect(locked.container).not.toHaveTextContent(/HIDDEN_FINALIZED_JUDGE_REASON|HIDDEN_FINALIZED_REFERENCE/);
+    expect(screen.queryByText("999", { exact: true })).not.toBeInTheDocument();
     expect(locked.container).not.toHaveTextContent("Submit & Next");
     expect(locked.container.querySelector("textarea")).toBeNull();
     locked.unmount();

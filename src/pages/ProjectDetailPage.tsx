@@ -7,6 +7,7 @@ import { downloadLocalText } from "../backup/download";
 import { createSafeFlowProjectBackup, safeProjectFileStem, serializeSafeFlowProjectBackup } from "../backup/projectBackup";
 import type { HumanValidationFinalization } from "../finalization/types";
 import type { JudgeAnalysis } from "../analysis/types";
+import { ProjectStateBadge } from "../components/ProjectStateBadge";
 
 export function ProjectDetailPage({ projectId }: { projectId: string }) {
   const [detail, setDetail] = useState<ProjectDetail | null>();
@@ -61,18 +62,15 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
   return (
     <main className="project-shell">
       <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href="/projects">All projects</a></header>
-      <span className="status-pill">{detail.project.status}</span>
+      <div className="badge-row"><span className="workspace-badge">LOCAL</span><ProjectStateBadge state={detail.project.status} /></div>
       <h1>{detail.project.name}</h1>
       {finalized && finalization ? <section className="completion-banner"><h2>{unblinded ? "Judge comparison created" : "Human validation finalized"}</h2><p>{finalization.annotations.length} / {finalization.annotations.length} human annotations finalized. {unblinded ? "This project has been explicitly unblinded; its human labels remain frozen." : "Automated-judge results remain blinded."}</p><dl><div><dt>Finalized</dt><dd>{new Date(finalization.finalizedAt).toLocaleString()}</dd></div><div><dt>Human snapshot</dt><dd className="hash-value">{finalization.snapshotHash.slice(0, 8)}…</dd></div></dl></section> : complete && <section className="completion-banner"><h2>Human validation complete</h2><p>Automated-judge results remain blinded. Review the human annotations before finalization.</p></section>}
 
       <section className="detail-grid">
-        <article className="detail-card"><h2>Project information</h2><dl>
+        <article className="detail-card"><h2>Project overview</h2><dl>
           <div><dt>Benchmark</dt><dd>{pack.name}</dd></div>
-          <div><dt>Benchmark-pack version</dt><dd>{detail.project.benchmarkPackVersion}</dd></div>
-          <div><dt>Source filename</dt><dd>{detail.sourceName}</dd></div>
-          <div><dt>Source SHA-256</dt><dd className="hash-value">{detail.importRun?.sourceSha256 ?? "Unavailable for legacy import"}</dd></div>
-          <div><dt>Import timestamp</dt><dd>{detail.importRun ? new Date(detail.importRun.createdAt).toLocaleString() : "Unavailable"}</dd></div>
-          <div><dt>Total items</dt><dd>{detail.progress.total}</dd></div>
+          <div><dt>Items</dt><dd>{detail.progress.total}</dd></div>
+          <div><dt>Current state</dt><dd>{detail.project.status.replaceAll("_", " ")}</dd></div>
         </dl></article>
         <article className="detail-card"><h2>Human-validation progress</h2><dl className="progress-breakdown">
           <div><dt>Unseen</dt><dd>{detail.progress.unseen}</dd></div>
@@ -83,6 +81,13 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           <div><dt>Skipped</dt><dd>{detail.progress.skipped}</dd></div>
         </dl><progress max="100" value={detail.progress.percentComplete} /><strong>{detail.progress.percentComplete}% complete</strong></article>
       </section>
+      <details className="technical-provenance"><summary>Technical provenance</summary><dl>
+        <div><dt>Source filename</dt><dd>{detail.sourceName}</dd></div>
+        <div><dt>Source SHA-256</dt><dd className="hash-value">{detail.importRun?.sourceSha256 ?? "Unavailable for legacy import"}</dd></div>
+        <div><dt>Benchmark-pack version</dt><dd>{detail.project.benchmarkPackVersion}</dd></div>
+        <div><dt>Rubric version</dt><dd>{detail.project.benchmarkPackVersion}</dd></div>
+        <div><dt>Import timestamp</dt><dd>{detail.importRun ? new Date(detail.importRun.createdAt).toLocaleString() : "Unavailable"}</dd></div>
+      </dl></details>
       <div className="page-actions">
         {!complete && !finalized && <a className="primary-link" href={`/projects/${projectId}/annotate`}>{started ? "Resume Validation" : "Start Validation"}</a>}
         {finalized ? <a className={unblinded ? "secondary-link button-link" : "primary-link"} href={`/projects/${projectId}/finalized`}>View Finalized Human Results</a> : <a className={complete ? "primary-link" : "secondary-link button-link"} href={`/projects/${projectId}/review`}>{complete ? "Review Before Finalization" : "Review Annotations"}</a>}

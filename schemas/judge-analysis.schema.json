@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://safeflow.local/schemas/judge-analysis.schema.json",
+  "title": "SafeFlow Immutable Judge Analysis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "schemaVersion", "status", "projectId", "finalizationId", "finalizationHash", "judgeId", "judgeArtifactSetHash", "judgeArtifacts", "comparisons", "summary", "createdAt", "analysisHash", "provenance"],
+  "properties": {
+    "id": { "$ref": "#/$defs/nonEmpty" },
+    "schemaVersion": { "const": "1.0" },
+    "status": { "const": "COMPLETED" },
+    "projectId": { "$ref": "#/$defs/nonEmpty" },
+    "finalizationId": { "$ref": "#/$defs/nonEmpty" },
+    "finalizationHash": { "$ref": "#/$defs/sha256" },
+    "judgeId": { "$ref": "#/$defs/nonEmpty" },
+    "judgeArtifactSetHash": { "$ref": "#/$defs/sha256" },
+    "judgeArtifacts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/judgeArtifact" } },
+    "comparisons": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/comparison" } },
+    "summary": { "$ref": "#/$defs/summary" },
+    "createdAt": { "$ref": "#/$defs/nonEmpty" },
+    "analysisHash": { "$ref": "#/$defs/sha256" },
+    "provenance": { "$ref": "#/$defs/provenance" }
+  },
+  "$defs": {
+    "nonEmpty": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "annotationValue": { "anyOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }, { "type": "null" }] },
+    "judgeArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "itemId", "judgeId", "score", "metadata", "createdAt", "artifactHash"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmpty" }, "itemId": { "$ref": "#/$defs/nonEmpty" }, "judgeId": { "$ref": "#/$defs/nonEmpty" },
+        "score": { "$ref": "#/$defs/annotationValue" }, "reasoning": { "type": "string" }, "metadata": { "type": "object" },
+        "createdAt": { "$ref": "#/$defs/nonEmpty" }, "artifactHash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "comparison": {
+      "type": "object", "additionalProperties": false,
+      "required": ["itemId", "sourceRowIndex", "humanLabelId", "judgeScore", "exactAgreement", "judgeArtifactId"],
+      "properties": {
+        "itemId": { "$ref": "#/$defs/nonEmpty" }, "externalItemId": { "type": "string" }, "sourceRowIndex": { "type": "integer", "minimum": 1 },
+        "humanLabelId": { "$ref": "#/$defs/nonEmpty" }, "humanNumericValue": { "type": "number" }, "judgeScore": { "$ref": "#/$defs/annotationValue" },
+        "exactAgreement": { "type": "boolean" }, "judgeArtifactId": { "$ref": "#/$defs/nonEmpty" }, "judgeReasoning": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["totalItems", "exactAgreements", "disagreements", "exactAgreementRate"],
+      "properties": {
+        "totalItems": { "type": "integer", "minimum": 1 }, "exactAgreements": { "type": "integer", "minimum": 0 },
+        "disagreements": { "type": "integer", "minimum": 0 }, "exactAgreementRate": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["application", "applicationVersion", "localOnly", "humanFinalizationId", "humanFinalizationHash", "judgeArtifactSetHash"],
+      "properties": {
+        "application": { "const": "SafeFlow Human Validator" }, "applicationVersion": { "$ref": "#/$defs/nonEmpty" }, "localOnly": { "const": true },
+        "humanFinalizationId": { "$ref": "#/$defs/nonEmpty" }, "humanFinalizationHash": { "$ref": "#/$defs/sha256" }, "judgeArtifactSetHash": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

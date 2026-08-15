@@ -4,6 +4,8 @@ export const ROUTES = [
   { pattern: "/projects/:projectId", purpose: "Project information and human-validation progress", milestone: "workflow" },
   { pattern: "/projects/:projectId/annotate", purpose: "Blinded annotation workspace with persistent resume", milestone: "workflow" },
   { pattern: "/projects/:projectId/review", purpose: "Human-only annotation review", milestone: "workflow" },
+  { pattern: "/projects/:projectId/finalized", purpose: "Read-only immutable finalized human results", milestone: "human finalization" },
+  { pattern: "/projects/:projectId/analysis/:analysisId", purpose: "Explicitly unblinded immutable human-vs-judge analysis", milestone: "judge analysis" },
   { pattern: "/mock/annotation", purpose: "Synthetic blinded annotation screen", milestone: "skeleton" },
   { pattern: "/settings/data", purpose: "Local dataset import, mapping, and preflight", milestone: "milestone 2" },
   { pattern: "/training", purpose: "Local validator training modules and progress", milestone: "training" },

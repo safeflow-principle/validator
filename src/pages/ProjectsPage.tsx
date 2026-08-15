@@ -74,7 +74,7 @@ export function ProjectsPage() {
               <p className="last-activity">Last activity {new Date(summary.lastActivityAt).toLocaleString()}</p>
               <div className="card-actions">
                 <a className="secondary-link button-link" href={`/projects/${summary.project.id}`}>Open</a>
-                <a className="primary-link button-link" href={summary.project.status === "HUMAN_COMPLETE" ? `/projects/${summary.project.id}/review` : `/projects/${summary.project.id}/annotate`}>Resume validation</a>
+                <a className="primary-link button-link" href={summary.project.status === "UNBLINDED" ? `/projects/${summary.project.id}` : summary.project.status === "HUMAN_FINALIZED" ? `/projects/${summary.project.id}/finalized` : summary.project.status === "HUMAN_COMPLETE" ? `/projects/${summary.project.id}/review` : `/projects/${summary.project.id}/annotate`}>{summary.project.status === "UNBLINDED" ? "View comparison" : summary.project.status === "HUMAN_FINALIZED" ? "View finalized results" : "Resume validation"}</a>
                 <button className="danger-button" onClick={() => void deleteProject(summary)} type="button">Delete</button>
               </div>
             </article>

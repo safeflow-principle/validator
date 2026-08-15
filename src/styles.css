@@ -160,6 +160,61 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .review-card dl { display: grid; grid-template-columns: 0.6fr 0.8fr 2fr 2fr 0.7fr; gap: 10px; }
 .review-card dd { margin: 4px 0 0; overflow-wrap: anywhere; }
 .export-card { margin-top: 24px; }
+.finalization-card { margin-top: 22px; border-color: #9bbbaa; }
+.finalization-card > p, .locked-finalization > p { max-width: 760px; color: #526159; line-height: 1.6; }
+.finalization-summary { display: grid !important; grid-template-columns: repeat(5, 1fr); gap: 8px !important; }
+.finalization-summary div { padding: 12px !important; border: 0 !important; border-radius: 5px; background: #f0f5f1; }
+.finalization-summary dd { font-size: 1.25rem; font-weight: 800; }
+.finalization-warning { margin: 18px 0; padding: 16px; border-left: 4px solid #bd7d22; background: #fff7e8; }
+.finalization-warning p { margin: 6px 0; }
+.finalization-errors { margin: 18px 0; padding: 16px; border-radius: 6px; background: #fff1ef; color: #762d27; }
+.finalization-errors h3 { margin-top: 0; }
+.warning-banner { margin: 18px 0; padding: 16px; border-left: 4px solid #bd7d22; background: #fff7e8; }
+.error-banner { margin: 14px 0; padding: 12px; border-radius: 6px; background: #fff1ef; color: #762d27; }
+.judge-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 24px 0 10px; }
+.judge-metrics > div, .judge-metrics > button { display: grid; gap: 5px; min-height: 92px; padding: 16px; border: 1px solid #dce3dd; border-radius: 8px; background: #fff; color: inherit; text-align: left; }
+.judge-metrics button { cursor: pointer; }
+.judge-metrics strong, .severe-error-grid strong { color: #214c3a; font-size: 1.55rem; }
+.judge-metrics span, .severe-error-grid span { color: #53615a; font-size: .78rem; font-weight: 800; text-transform: uppercase; }
+.methodology-note { color: #53615a; font-size: .88rem; line-height: 1.5; }
+.severe-errors, .confusion-section, .category-performance { margin-top: 30px; padding: 22px; border: 1px solid #dce3dd; border-radius: 9px; background: #fff; }
+.severe-error-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.severe-error-grid button { display: grid; gap: 5px; padding: 16px; border: 1px solid #ead8b7; border-radius: 7px; background: #fff9ee; color: inherit; text-align: left; cursor: pointer; }
+.severe-error-grid small { color: #6d5b3f; line-height: 1.35; }
+.confusion-matrix, .category-table-wrap table { width: 100%; border-collapse: collapse; }
+.confusion-matrix th, .confusion-matrix td, .category-table-wrap th, .category-table-wrap td { padding: 10px; border: 1px solid #dce3dd; text-align: center; }
+.confusion-matrix th:first-child, .category-table-wrap th:first-child { text-align: left; }
+.confusion-matrix button, .category-table-wrap td button { width: 100%; min-height: 34px; border: 0; border-radius: 4px; background: #eef5f0; color: #225f46; font-weight: 800; cursor: pointer; }
+.category-table-wrap { overflow-x: auto; }
+.category-table-wrap th small { display: block; max-width: 380px; margin-top: 5px; color: #7a6750; font-weight: 400; line-height: 1.3; }
+.case-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.case-list-heading h2, .case-list-heading p { margin-bottom: 4px; }
+@media (max-width: 720px) { .judge-metrics, .severe-error-grid { grid-template-columns: 1fr; } }
+.finalization-button { width: 100%; margin-top: 10px; }
+.modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(20, 30, 25, .62); }
+.confirmation-dialog { width: min(620px, 100%); max-height: 90vh; overflow: auto; padding: 30px; border-radius: 10px; background: #fff; box-shadow: 0 24px 80px rgba(0,0,0,.25); }
+.confirmation-dialog h2 { margin-top: 0; font-family: Georgia, serif; font-size: 2rem; }
+.confirmation-check { display: flex; gap: 10px; margin: 14px 0; padding: 13px; border: 1px solid #d4ddd6; border-radius: 6px; }
+.confirmation-check input { flex: 0 0 auto; margin-top: 3px; }
+.dialog-actions { display: flex; justify-content: end; gap: 9px; margin-top: 22px; }
+.dialog-actions button { padding: 0 15px; }
+.locked-finalization dl, .technical-provenance dl { display: grid; gap: 10px; }
+.locked-finalization dl div, .technical-provenance dl div { padding-bottom: 9px; border-bottom: 1px solid #dce3dd; }
+.locked-finalization dt, .technical-provenance dt { color: #67736c; font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+.locked-finalization dd, .technical-provenance dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.finalized-summary div:last-child strong { font-family: ui-monospace, monospace; font-size: 1.35rem; }
+.finalized-item-list { margin-top: 28px; }
+.finalized-item { margin: 10px 0; border: 1px solid #d5ddd7; border-radius: 8px; background: #fff; }
+.finalized-item > summary { display: grid; grid-template-columns: 1fr auto auto; gap: 18px; align-items: center; padding: 17px 20px; cursor: pointer; }
+.finalized-item > summary small { color: #65726b; text-transform: capitalize; }
+.finalized-item-body { display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; padding: 22px; border-top: 1px solid #dde3de; }
+.finalized-item-body section p { white-space: pre-wrap; line-height: 1.6; }
+.finalized-item-body dl { display: grid; gap: 9px; margin: 0; }
+.finalized-item-body dl div { padding-bottom: 8px; border-bottom: 1px solid #e1e6e2; }
+.finalized-item-body dt { color: #68756e; font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+.finalized-item-body dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.technical-provenance { margin-top: 25px; padding: 18px 20px; border: 1px solid #d2dcd4; border-radius: 7px; background: #f9fbf9; }
+.technical-provenance > summary { cursor: pointer; font-weight: 800; }
 
 .import-shell { width: min(900px, 92vw); margin: 54px auto 80px; }
 .import-shell > .wordmark { display: inline-block; margin-bottom: 48px; }
@@ -258,6 +313,8 @@ select, .project-name-field input { width: 100%; min-height: 42px; padding: 8px 
   .workspace-grid { grid-template-columns: 1fr; width: 100%; border-left: 0; border-right: 0; }
   .item-panel { border-right: 0; border-bottom: 1px solid #dde2dc; }
   .annotation-header, .progress-row { padding-left: 22px; padding-right: 22px; }
+  .finalization-summary { grid-template-columns: 1fr 1fr; }
+  .finalized-item > summary, .finalized-item-body { grid-template-columns: 1fr; }
 }
 @media (max-width: 540px) {
   .product-name { display: none; }

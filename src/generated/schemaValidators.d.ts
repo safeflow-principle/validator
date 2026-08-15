@@ -8,3 +8,6 @@ export interface StandaloneValidateFunction {
 export const validateBenchmarkPack: StandaloneValidateFunction;
 export const validateSafeFlowProjectBackup: StandaloneValidateFunction;
 export const validateTrainingCurriculum: StandaloneValidateFunction;
+export const validateHumanValidationFinalization: StandaloneValidateFunction;
+export const validateJudgeAnalysis: StandaloneValidateFunction;
+export const validateJudgeAnalysisReport: StandaloneValidateFunction;

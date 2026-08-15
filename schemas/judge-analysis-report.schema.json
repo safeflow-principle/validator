@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://safeflow.local/schemas/judge-analysis-report.schema.json",
+  "title": "SafeFlow Immutable Judge Analysis Report",
+  "type": "object", "additionalProperties": false,
+  "required": ["id", "schemaVersion", "status", "projectId", "analysisId", "analysisHash", "finalizationId", "finalizationHash", "methodology", "metrics", "confusionMatrix", "severeDisagreements", "categoryBreakdowns", "createdAt", "reportHash", "provenance"],
+  "properties": {
+    "id": { "$ref": "#/$defs/nonEmpty" }, "schemaVersion": { "const": "1.0" }, "status": { "const": "COMPLETED" },
+    "projectId": { "$ref": "#/$defs/nonEmpty" }, "analysisId": { "$ref": "#/$defs/nonEmpty" }, "analysisHash": { "$ref": "#/$defs/sha256" },
+    "finalizationId": { "$ref": "#/$defs/nonEmpty" }, "finalizationHash": { "$ref": "#/$defs/sha256" },
+    "methodology": { "$ref": "#/$defs/methodology" }, "metrics": { "$ref": "#/$defs/metrics" },
+    "confusionMatrix": { "$ref": "#/$defs/confusionMatrix" }, "severeDisagreements": { "$ref": "#/$defs/severe" },
+    "categoryBreakdowns": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+    "createdAt": { "$ref": "#/$defs/nonEmpty" }, "reportHash": { "$ref": "#/$defs/sha256" }, "provenance": { "$ref": "#/$defs/provenance" }
+  },
+  "$defs": {
+    "nonEmpty": { "type": "string", "minLength": 1 }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "score": { "enum": [0, 0.5, 1] }, "nullableNumber": { "type": ["number", "null"] },
+    "methodology": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "scoreOrder", "confusionMatrixOrientation", "cohenKappa", "weightedKappa", "meanAbsoluteErrorFormula", "directionalBiasFormula", "categoryKappaMinimumN", "categoryKappaMinimumNAuthority"],
+      "properties": {
+        "version": { "const": "1.0.0" }, "scoreOrder": { "type": "array", "minItems": 3, "maxItems": 3, "prefixItems": [{ "const": 0 }, { "const": 0.5 }, { "const": 1 }], "items": false },
+        "confusionMatrixOrientation": { "const": "human-rows-judge-columns" }, "cohenKappa": { "const": "unweighted" }, "weightedKappa": { "const": "linear-distance-0-1-2" },
+        "meanAbsoluteErrorFormula": { "const": "mean(abs(human_score - judge_score))" }, "directionalBiasFormula": { "const": "mean(judge_score - human_score)" },
+        "categoryKappaMinimumN": { "const": 10 }, "categoryKappaMinimumNAuthority": { "const": "safeflow-reporting-rule" }
+      }
+    },
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["n", "exactAgreementCount", "exactAgreementRate", "cohenKappa", "linearWeightedKappa", "meanAbsoluteError", "directionalBias", "severeDisagreementCount", "severeDisagreementRate", "human0Judge1Count", "human1Judge0Count"],
+      "properties": {
+        "n": { "type": "integer", "minimum": 0 }, "exactAgreementCount": { "type": "integer", "minimum": 0 }, "exactAgreementRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "cohenKappa": { "$ref": "#/$defs/nullableNumber" }, "linearWeightedKappa": { "$ref": "#/$defs/nullableNumber" }, "meanAbsoluteError": { "type": "number", "minimum": 0 },
+        "directionalBias": { "type": "number" }, "severeDisagreementCount": { "type": "integer", "minimum": 0 }, "severeDisagreementRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "human0Judge1Count": { "type": "integer", "minimum": 0 }, "human1Judge0Count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cell": {
+      "type": "object", "additionalProperties": false, "required": ["humanScore", "judgeScore", "count", "itemIds"],
+      "properties": { "humanScore": { "$ref": "#/$defs/score" }, "judgeScore": { "$ref": "#/$defs/score" }, "count": { "type": "integer", "minimum": 0 }, "itemIds": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } } }
+    },
+    "confusionMatrix": {
+      "type": "object", "additionalProperties": false, "required": ["rowDimension", "columnDimension", "labels", "cells"],
+      "properties": {
+        "rowDimension": { "const": "human" }, "columnDimension": { "const": "automated-judge" },
+        "labels": { "type": "array", "minItems": 3, "maxItems": 3, "prefixItems": [{ "const": 0 }, { "const": 0.5 }, { "const": 1 }], "items": false },
+        "cells": { "type": "array", "minItems": 9, "maxItems": 9, "items": { "$ref": "#/$defs/cell" } }
+      }
+    },
+    "severe": {
+      "type": "object", "additionalProperties": false, "required": ["human0Judge1ItemIds", "human1Judge0ItemIds"],
+      "properties": { "human0Judge1ItemIds": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } }, "human1Judge0ItemIds": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } } }
+    },
+    "category": {
+      "type": "object", "additionalProperties": false, "required": ["level", "categoryId", "categoryName", "itemIds", "metrics"],
+      "properties": {
+        "level": { "enum": ["level1", "level2", "level3", "level4"] }, "categoryId": { "$ref": "#/$defs/nonEmpty" }, "categoryName": { "$ref": "#/$defs/nonEmpty" },
+        "itemIds": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } }, "metrics": { "$ref": "#/$defs/metrics" }, "reliabilityNote": { "type": "string" }
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false, "required": ["application", "applicationVersion", "localOnly", "analysisId", "analysisHash", "finalizationId", "finalizationHash", "methodologyVersion"],
+      "properties": {
+        "application": { "const": "SafeFlow Human Validator" }, "applicationVersion": { "$ref": "#/$defs/nonEmpty" }, "localOnly": { "const": true },
+        "analysisId": { "$ref": "#/$defs/nonEmpty" }, "analysisHash": { "$ref": "#/$defs/sha256" }, "finalizationId": { "$ref": "#/$defs/nonEmpty" }, "finalizationHash": { "$ref": "#/$defs/sha256" }, "methodologyVersion": { "const": "1.0.0" }
+      }
+    }
+  }
+}

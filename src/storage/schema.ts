@@ -1,5 +1,5 @@
 export const DATABASE_NAME = "safeflow-human-validator";
-export const DATABASE_VERSION = 2;
+export const DATABASE_VERSION = 5;
 
 export const STORE_NAMES = {
   projects: "projects",
@@ -12,6 +12,10 @@ export const STORE_NAMES = {
   importRuns: "importRuns",
   trainingSessions: "trainingSessions",
   trainingAttempts: "trainingAttempts",
+  humanValidationFinalizations: "humanValidationFinalizations",
+  judgeAnalyses: "judgeAnalyses",
+  judgeAnalysisReports: "judgeAnalysisReports",
+  auditEvents: "auditEvents",
 } as const;
 
 export type StoreName = (typeof STORE_NAMES)[keyof typeof STORE_NAMES];
@@ -82,6 +86,40 @@ export const DATABASE_SCHEMA: Record<StoreName, StoreDefinition> = {
       { name: "by-benchmark", keyPath: "benchmarkId" },
       { name: "by-item", keyPath: "itemId" },
       { name: "by-session-item-attempt", keyPath: ["sessionId", "itemId", "attemptNumber"], unique: true },
+    ],
+  },
+  humanValidationFinalizations: {
+    keyPath: "id",
+    indexes: [
+      { name: "by-project", keyPath: "projectId" },
+      { name: "by-finalized-at", keyPath: "finalizedAt" },
+      { name: "by-sequence", keyPath: "finalizationSequence" },
+      { name: "by-project-sequence", keyPath: ["projectId", "finalizationSequence"], unique: true },
+    ],
+  },
+  judgeAnalyses: {
+    keyPath: "id",
+    indexes: [
+      { name: "by-project", keyPath: "projectId" },
+      { name: "by-finalization", keyPath: "finalizationId", unique: true },
+      { name: "by-created-at", keyPath: "createdAt" },
+    ],
+  },
+  judgeAnalysisReports: {
+    keyPath: "id",
+    indexes: [
+      { name: "by-project", keyPath: "projectId" },
+      { name: "by-analysis", keyPath: "analysisId" },
+      { name: "by-analysis-methodology", keyPath: ["analysisId", "methodology.version"], unique: true },
+      { name: "by-created-at", keyPath: "createdAt" },
+    ],
+  },
+  auditEvents: {
+    keyPath: "id",
+    indexes: [
+      { name: "by-project", keyPath: "projectId" },
+      { name: "by-type", keyPath: "type" },
+      { name: "by-created-at", keyPath: "createdAt" },
     ],
   },
 };

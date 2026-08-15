@@ -8,6 +8,11 @@ import type {
   ReferenceArtifact,
   ValidationItem,
 } from "../core/types";
+import type { HumanValidationAuditEvent, HumanValidationFinalization } from "../finalization/types";
+import type { JudgeAnalysis, JudgeAnalysisAuditEvent } from "../analysis/types";
+import type { JudgeAnalysisReport, JudgeAnalysisReportAuditEvent } from "../analysis/reportTypes";
+
+export type ProjectAuditEvent = HumanValidationAuditEvent | JudgeAnalysisAuditEvent | JudgeAnalysisReportAuditEvent;
 
 export interface ProjectArchiveRecords {
   project: Project;
@@ -17,10 +22,14 @@ export interface ProjectArchiveRecords {
   benchmarkPack: BenchmarkPack;
   judgeArtifacts: JudgeArtifact[];
   referenceArtifacts: ReferenceArtifact[];
+  humanValidationFinalizations: HumanValidationFinalization[];
+  judgeAnalyses: JudgeAnalysis[];
+  judgeAnalysisReports: JudgeAnalysisReport[];
+  auditEvents: ProjectAuditEvent[];
 }
 
 export interface SafeFlowProjectBackup {
-  schemaVersion: "1.0";
+  schemaVersion: "1.3";
   kind: "safeflow-project-backup";
   exportedAt: string;
   provenance: {
@@ -44,6 +53,10 @@ export interface SafeFlowProjectBackup {
     progress: HumanValidationProgress;
     items: ValidationItem[];
     annotations: Annotation[];
+    humanValidationFinalizations: HumanValidationFinalization[];
+    judgeAnalyses: JudgeAnalysis[];
+    judgeAnalysisReports: JudgeAnalysisReport[];
+    auditEvents: ProjectAuditEvent[];
   };
   isolatedArtifacts: {
     judgeArtifacts: JudgeArtifact[];

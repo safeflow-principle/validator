@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://safeflow.local/schemas/human-validation-finalization.schema.json",
+  "title": "SafeFlow Human Validation Finalization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "schemaVersion", "projectId", "finalizationSequence", "status", "validatorId", "benchmark", "source", "projectSnapshot", "annotations", "finalizedAt", "snapshotHash", "provenance"],
+  "properties": {
+    "id": { "$ref": "#/$defs/nonEmpty" },
+    "schemaVersion": { "const": "1.0" },
+    "projectId": { "$ref": "#/$defs/nonEmpty" },
+    "finalizationSequence": { "type": "integer", "minimum": 1 },
+    "status": { "const": "FINALIZED" },
+    "validatorId": { "$ref": "#/$defs/nonEmpty" },
+    "benchmark": { "$ref": "#/$defs/benchmark" },
+    "source": { "$ref": "#/$defs/source" },
+    "projectSnapshot": { "$ref": "#/$defs/projectSnapshot" },
+    "annotations": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/annotation" } },
+    "finalizedAt": { "$ref": "#/$defs/nonEmpty" },
+    "snapshotHash": { "$ref": "#/$defs/sha256" },
+    "previousFinalizationId": { "$ref": "#/$defs/nonEmpty" },
+    "supersedesFinalizationId": { "$ref": "#/$defs/nonEmpty" },
+    "provenance": { "$ref": "#/$defs/provenance" }
+  },
+  "$defs": {
+    "nonEmpty": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "benchmark": {
+      "type": "object", "additionalProperties": false,
+      "required": ["benchmarkId", "benchmarkVersion", "benchmarkPackVersion", "rubricVersion"],
+      "properties": { "benchmarkId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkVersion": { "$ref": "#/$defs/nonEmpty" }, "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" }, "rubricVersion": { "$ref": "#/$defs/nonEmpty" } }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fileName", "fileSha256", "importRunId", "importTimestamp"],
+      "properties": { "fileName": { "$ref": "#/$defs/nonEmpty" }, "fileSha256": { "$ref": "#/$defs/sha256" }, "importRunId": { "$ref": "#/$defs/nonEmpty" }, "importTimestamp": { "$ref": "#/$defs/nonEmpty" } }
+    },
+    "projectSnapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["projectName", "sourceRows", "excludedItems", "totalItems", "includedItems", "submittedAnnotations", "flaggedAnnotations", "lowConfidenceAnnotations", "mediumConfidenceFlaggedAnnotations"],
+      "properties": {
+        "projectName": { "$ref": "#/$defs/nonEmpty" }, "sourceRows": { "type": "integer", "minimum": 0 }, "excludedItems": { "type": "integer", "minimum": 0 }, "totalItems": { "type": "integer", "minimum": 0 }, "includedItems": { "type": "integer", "minimum": 1 }, "submittedAnnotations": { "type": "integer", "minimum": 1 }, "flaggedAnnotations": { "type": "integer", "minimum": 0 }, "lowConfidenceAnnotations": { "type": "integer", "minimum": 0 }, "mediumConfidenceFlaggedAnnotations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "taxonomyPath": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "level1": { "type": "string" }, "level2": { "type": "string" }, "level3": { "type": "string" }, "level4": { "type": "string" } }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "startOffset", "endOffset", "quotedText"],
+      "properties": { "source": { "enum": ["response", "prompt"] }, "startOffset": { "type": "integer", "minimum": 0 }, "endOffset": { "type": "integer", "minimum": 1 }, "quotedText": { "$ref": "#/$defs/nonEmpty" } }
+    },
+    "annotation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["itemId", "prompt", "response", "sourceRowIndex", "labelId", "confidence", "evidenceSpans", "needsReview", "annotationId", "annotationRevision", "annotationRole", "annotationCreatedAt", "annotationUpdatedAt", "annotationSubmittedAt", "benchmarkPackId", "benchmarkPackVersion", "rubricVersion", "finalizedAt"],
+      "properties": {
+        "itemId": { "$ref": "#/$defs/nonEmpty" }, "externalItemId": { "type": "string" }, "promptId": { "type": "string" }, "promptGroupId": { "type": "string" },
+        "prompt": { "type": "string" }, "response": { "type": "string" }, "sourceRowIndex": { "type": "integer", "minimum": 1 }, "categoryId": { "type": "string" }, "taxonomyPath": { "$ref": "#/$defs/taxonomyPath" },
+        "labelId": { "$ref": "#/$defs/nonEmpty" }, "numericValue": { "type": "number" }, "confidence": { "enum": ["high", "medium", "low"] }, "reasoning": { "type": "string" },
+        "evidenceSpans": { "type": "array", "items": { "$ref": "#/$defs/evidence" } }, "needsReview": { "type": "boolean" }, "flagReasons": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } },
+        "annotationId": { "$ref": "#/$defs/nonEmpty" }, "annotationRevision": { "type": "integer", "minimum": 1 }, "annotationRole": { "const": "PRIMARY" },
+        "annotationCreatedAt": { "$ref": "#/$defs/nonEmpty" }, "annotationUpdatedAt": { "$ref": "#/$defs/nonEmpty" }, "annotationSubmittedAt": { "$ref": "#/$defs/nonEmpty" },
+        "benchmarkPackId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" }, "rubricVersion": { "$ref": "#/$defs/nonEmpty" }, "finalizedAt": { "$ref": "#/$defs/nonEmpty" }
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["application", "applicationVersion", "schemaVersion", "benchmarkId", "benchmarkVersion", "benchmarkPackVersion", "rubricVersion", "sourceFileName", "sourceFileSha256", "importRunId", "validatorId", "localOnly"],
+      "properties": {
+        "application": { "const": "SafeFlow Human Validator" }, "applicationVersion": { "$ref": "#/$defs/nonEmpty" }, "schemaVersion": { "const": "1.0" },
+        "benchmarkId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkVersion": { "$ref": "#/$defs/nonEmpty" }, "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" }, "rubricVersion": { "$ref": "#/$defs/nonEmpty" },
+        "sourceFileName": { "$ref": "#/$defs/nonEmpty" }, "sourceFileSha256": { "$ref": "#/$defs/sha256" }, "importRunId": { "$ref": "#/$defs/nonEmpty" }, "validatorId": { "$ref": "#/$defs/nonEmpty" }, "localOnly": { "const": true }
+      }
+    }
+  }
+}

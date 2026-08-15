@@ -1,6 +1,6 @@
 # SafeFlow Human Validator
 
-SafeFlow Human Validator is a local-first research tool for independently evaluating automated LLM judges. It supports importing a dataset, creating a local project, annotating structurally blinded items, autosaving drafts, leaving and resuming, reviewing human annotations, and reaching human-validation completion without revealing automated-judge results. Projects can be exported and restored as versioned `.safeflow.json` backups, and human annotations can be inspected as judge-free CSV files.
+SafeFlow Human Validator is a local-first research tool for independently evaluating automated LLM judges. It supports importing a dataset, creating a local project, annotating structurally blinded items, autosaving drafts, leaving and resuming, reviewing human annotations, and finalizing an immutable human-validation snapshot without revealing automated-judge results. Projects can be exported and restored as versioned `.safeflow.json` backups, and human annotations can be inspected as judge-free CSV files.
 
 The local AIR-BENCH training module provides a separate 20-item synthetic starter lesson, including longer realistic prompt/response examples, with immediate reviewed feedback for all three labels, decisive evidence, retries, confidence calibration, and deterministic mistake patterns. Practice records never enter production annotation stores.
 
@@ -48,9 +48,10 @@ The importer is read-only with respect to its sources and makes no network calls
 - Dataset preflight checks mappings, required content, duplicate external IDs, scalar hidden fields, and AIR-BENCH category IDs before local persistence.
 - Recognized AIR-BENCH prompt IDs can hydrate missing canonical prompt/category metadata; explicit conflicts block import and every hydrated field records provenance.
 - `/projects`, project detail, real annotation, and human-only review routes implement deterministic source-order navigation and persistent resume semantics.
-- Project states are `READY`, `VALIDATING`, `REVIEW`, and `HUMAN_COMPLETE`; project finalization is intentionally deferred.
+- Project states are `READY`, `VALIDATING`, `REVIEW`, `HUMAN_COMPLETE`, `HUMAN_FINALIZED`, and `UNBLINDED`; finalization creates a separate canonical SHA-256 snapshot and locks annotation editing, while unblinding requires a second explicit confirmation.
 - Project backups preserve exact local workflow state and keep judge/reference records under a separate `isolatedArtifacts` envelope; restore is schema-validated and atomic.
 - Annotated CSV export reads only blinded items and the local validator's annotations.
+- Finalized CSV and read-only human results read from the immutable snapshot; judge data remains blinded.
 - `/training` provides approved, fixed-gold practice content in stores and routes separate from production annotation.
 
 ## Repository map
@@ -70,6 +71,7 @@ src/
   annotation/                  # blinded UI and pure state machine
   benchmarks/                  # validated pack loader
   core/                        # domain interfaces
+  finalization/                # eligibility, canonical hash, immutable reader
   pages/                       # route-level composition
   projects/                    # progress and deterministic resume rules
   import/                      # parsing, hydration, mapping, preflight, bundle construction
@@ -84,4 +86,4 @@ Architectural rationale is in [docs/architecture.md](docs/architecture.md). Priv
 
 ## Current scope limits
 
-This milestone intentionally stops before project finalization and judge comparison. Import preview pagination, cancellation/recovery, export, append-only revision history, adjudication, multi-validator workflows, comparison analytics, rubric migration, and backup/recovery remain future work.
+Explicit judge unblinding and immutable methodology-versioned reports now include a fixed-orientation 3×3 confusion matrix, severe directional errors, ordinary and linearly weighted Cohen's κ, MAE, directional bias, AIR taxonomy breakdowns, and case drill-down. Confidence intervals, adjudication, reference-label comparison, human-human agreement, PDF reports, import preview pagination, cancellation/recovery, multi-validator workflows, and independent rubric migration remain future work.

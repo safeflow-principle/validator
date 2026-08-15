@@ -2,7 +2,7 @@
 
 ## Status
 
-This document describes the local-first workflow through human-validation completion, before project finalization or judge comparison. The governing principle is:
+This document describes the local-first workflow through immutable human-validation finalization and explicit snapshot-bound judge comparison. The governing principle is:
 
 > annotation engine + benchmark pack
 
@@ -32,6 +32,7 @@ validator/
 │   │   └── taxonomyReference.ts
 │   ├── core/                     # domain interfaces and local validator identity
 │   ├── import/                   # parsing, hydration, preflight, entity builder
+│   ├── finalization/             # eligibility, canonical hash, immutable human snapshot
 │   ├── pages/                    # project, annotation, review, import routes
 │   ├── projects/                 # progress and deterministic resume logic
 │   ├── storage/                  # IndexedDB schema and repository
@@ -59,7 +60,10 @@ AIR-BENCH taxonomy assets maintain two parallel representations: the exact datas
 | Annotation UI | Render a `BlindedValidationItem`, pack-defined fields, and annotation workflow | Judge artifacts, reference artifacts, other annotations |
 | Annotation state machine | Pure transitions, required-field validation, draft/submission lifecycle, evidence edits, save intents | IndexedDB, React, benchmark-specific labels |
 | Benchmark loader | Validate and clone versioned JSON packs | Project or evaluation data |
-| Local storage | Persist entities and atomic import bundles in browser IndexedDB | UI layout or benchmark semantics |
+| Local storage | Persist entities, atomic imports, and atomic finalization commits in browser IndexedDB | UI layout or benchmark semantics |
+| Human finalization | Validate, canonicalize, hash, and read immutable human snapshots | Judge/reference stores and comparison analytics |
+| Judge analysis | Explicitly unblind one finalization, snapshot and hash judge artifacts, and persist immutable comparisons | Mutable annotations or implicit judge access |
+| Judge analysis report | Derive methodology-versioned reliability metrics and drill-down indexes from immutable inputs | Current annotations, source judge records, or mutation of the analysis |
 | Dataset import | Parse local files, map columns, preflight records, and construct separated entities | React layout, annotation state, network services |
 | Project portability | Validate, export, and atomically restore versioned local project envelopes | Annotation DOM, judge comparison, cloud storage |
 | Training/practice | Render approved fixed-gold curriculum, append attempts, and derive local instructional results | Production annotations, judge artifacts, qualification |
@@ -71,18 +75,19 @@ Blinding is structural. `JudgeArtifact` and `ReferenceArtifact` are separate ent
 
 ```text
 Project
-  └── ValidationItem (many)
+  ├── ValidationItem (many)
         ├── Annotation (many; one per validator identity)
         ├── JudgeArtifact (many; isolated)
         ├── ReferenceArtifact (zero or one; isolated)
-        └── AdjudicatedAnnotation (zero or one; derived later)
+  │     └── AdjudicatedAnnotation (zero or one; derived later)
+  └── HumanValidationFinalization (immutable snapshots; one in MVP)
 ```
 
 `Annotation` is never embedded in `ValidationItem`. This supports multiple independent annotations and later adjudication without migrating the core relationship. The MVP's validator ID is a local pseudonymous identifier, not an authenticated account.
 
 ## IndexedDB schema
 
-Database: `safeflow-human-validator`, version `2`.
+Database: `safeflow-human-validator`, version `3`.
 
 | Store | Primary key | Important indexes |
 |---|---|---|
@@ -96,6 +101,8 @@ Database: `safeflow-human-validator`, version `2`.
 | `importRuns` | `id` | project |
 | `trainingSessions` | `id` | benchmark; status |
 | `trainingAttempts` | `id` | session; benchmark; item; unique session + item + attempt number |
+| `humanValidationFinalizations` | `id` | project; finalized time; sequence; unique project + sequence |
+| `auditEvents` | `id` | project; type; creation time |
 
 Native IndexedDB is used to minimize runtime surface and keep the storage boundary explicit. Schema upgrades must be additive or include a tested migration in `onupgradeneeded`. Project, validation-item, judge-artifact, reference-artifact, and import-run records are committed in one transaction so partially imported datasets are not visible.
 
@@ -124,7 +131,7 @@ saving --SAVE_FAILED--> save-error --edit/retry--> editing/saving
 submitted --edit--> draft
 ```
 
-Submission validates score, confidence, and reasoning from the active pack. Submitted annotations count toward human progress but remain editable until the later project-finalization milestone. Every successful persistence increments the annotation revision; stale revisions are rejected.
+Submission validates score, confidence, and reasoning from the active pack. Submitted annotations count toward human progress and remain editable until project-level Human Validation Finalization. Every successful persistence increments the annotation revision; stale revisions are rejected. Database v3 also records explicit annotation pack and rubric versions.
 
 Autosave persists score, confidence, reasoning, evidence spans, and review flags. The UI reports `Saving…` while the IndexedDB operation is pending and `Saved locally` only after it resolves.
 
@@ -132,13 +139,17 @@ Autosave persists score, confidence, reasoning, evidence spans, and review flags
 
 Items are sorted by imported source-row order. A route without an explicit item first resumes the earliest draft, otherwise the first unsubmitted item, and routes to review if all items are submitted. Resume state is derived from IndexedDB records, not route or transient React state.
 
-Project transitions are `READY → VALIDATING ↔ REVIEW → HUMAN_COMPLETE`. Editing a submitted annotation returns it to draft and moves a human-complete project back to `VALIDATING`. There is deliberately no `COMPLETE` state yet.
+Project transitions are `READY → VALIDATING ↔ REVIEW → HUMAN_COMPLETE → HUMAN_FINALIZED → UNBLINDED`. Editing a submitted annotation returns it to draft before finalization. `HUMAN_FINALIZED` locks normal annotation persistence and exposes only read-only finalized human results. It does not reveal judge data. `UNBLINDED` is reached only when the researcher confirms comparison against a named finalization snapshot; there is deliberately no generic `COMPLETE` state.
+
+## Human finalization boundary
+
+Finalization is a separate immutable snapshot rather than a flag on `Annotation`. Preparation reads projects, items, local annotations, import provenance, and the benchmark pack; it never reads judge/reference stores. Canonical JSON uses lexicographically sorted properties and source-row annotation order, then Web Crypto calculates SHA-256 without the hash field. A second IndexedDB phase re-reads and compares all human-side inputs before atomically adding the snapshot, changing project status, and adding a content-free audit event. See [human-validation-finalization.md](human-validation-finalization.md).
 
 ## Local backup and restore
 
-Project portability is implemented as a versioned `.safeflow.json` envelope. Its `workflow` section contains the resumable human-validation state and embedded benchmark pack; its sibling `isolatedArtifacts` section contains judge and reference records. Restore validates cross-record relationships, evidence offsets, progress, source provenance, and pack versions before committing every record in one transaction. Existing project IDs are never overwritten.
+Project portability is implemented as a versioned `.safeflow.json` envelope. Schema `1.2` adds immutable judge analyses while its sibling `isolatedArtifacts` section still contains source judge and reference records. Restore validates cross-record relationships, evidence offsets, progress, source provenance, pack versions, every human-finalization SHA-256, and every analysis/artifact hash before committing every record in one transaction. Existing project IDs are never overwritten.
 
-The annotated CSV path is narrower by design: it queries `BlindedValidationItem[]` and local-validator annotations only. Judge/reference repositories are not called during CSV generation.
+Before finalization, CSV queries `BlindedValidationItem[]` and local-validator annotations only. After finalization, CSV defaults to the immutable finalization snapshot and includes finalization identity, hash, timestamp, annotation revision, and version fields. Judge/reference repositories are not called during either path.
 
 ## Route map
 
@@ -150,6 +161,7 @@ The annotated CSV path is narrower by design: it queries `BlindedValidationItem[
 | `/projects/:projectId` | Project provenance and human-validation progress | Implemented |
 | `/projects/:projectId/annotate` | Real blinded annotation workspace | Implemented |
 | `/projects/:projectId/review` | Human-only review and filters | Implemented |
+| `/projects/:projectId/finalized` | Read-only immutable finalized human results | Implemented |
 | `/settings/data` | Local dataset import, mapping, and preflight | Milestone 2 implemented slice |
 | `/training` | Training modules, local progress, and purpose separation | Implemented |
 | `/training/air-bench-2024` | Scoring introduction, curriculum, and category practice | Implemented |
@@ -164,13 +176,15 @@ The application still uses a small pathname parser. A routing dependency remains
 - Annotations have a monotonic revision and explicit submission timestamp.
 - Benchmark pack identity and version are recorded on projects and annotations.
 - Pack prose carries field-level provenance.
-- Future mutation history should be append-only; it is not implemented in this milestone.
+- Human finalizations are immutable, canonically hashed, and linked to content-free project audit events.
 
 ## Assumptions and ambiguities
 
 - The supplied implementation specification does not define a detailed Milestone 2 file contract. The first import slice therefore accepts record-oriented CSV/JSON/JSONL, requires explicit prompt/response mapping, and favors blocking ambiguous category IDs over silently coercing them.
 - Official AIR-BENCH judge prompts exist upstream. The reference panel includes only a cited SafeFlow paraphrase of their scoring rules; category-specific prompt text is not bundled, and the panel explicitly marks that rubric unavailable.
-- Item submission is intentionally editable and distinct from project finalization. Full append-only revision history and correction/supersession records are deferred; the current repository enforces monotonic revision numbers.
+- Item submission is intentionally editable and distinct from project finalization. Full append-only annotation revision history and finalization amendments/supersession are deferred; the current repository enforces monotonic working revisions and an immutable sequence-1 finalization.
+- AIR-BENCH currently versions rubric semantics with the benchmark pack, so `rubricVersion` equals the immutable pack version. A separately installable rubric lifecycle is future work.
+- The pack does not declare evidence mandatory. Finalization therefore permits zero evidence spans but strictly validates every preserved span.
 - A single local validator is represented by a stable local ID. No account or identity proof is implied.
 - “Remain local to the browser” means IndexedDB is authoritative for the MVP. No service worker, sync, server endpoint, or remote backup is included.
 - Adjudication is represented in the schema but has no UI or workflow in this milestone.

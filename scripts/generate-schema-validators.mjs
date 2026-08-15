@@ -9,6 +9,9 @@ const readJson = async (relativePath) => JSON.parse(await readFile(path.join(roo
 const benchmarkPack = await readJson("schemas/benchmark-pack.schema.json");
 const projectBackup = await readJson("schemas/safeflow-project-backup.schema.json");
 const trainingCurriculum = await readJson("schemas/training-curriculum.schema.json");
+const humanValidationFinalization = await readJson("schemas/human-validation-finalization.schema.json");
+const judgeAnalysis = await readJson("schemas/judge-analysis.schema.json");
+const judgeAnalysisReport = await readJson("schemas/judge-analysis-report.schema.json");
 const ajv = new Ajv2020({
   allErrors: true,
   strict: true,
@@ -18,10 +21,16 @@ const ajv = new Ajv2020({
 ajv.addSchema(benchmarkPack);
 ajv.addSchema(projectBackup);
 ajv.addSchema(trainingCurriculum);
+ajv.addSchema(humanValidationFinalization);
+ajv.addSchema(judgeAnalysis);
+ajv.addSchema(judgeAnalysisReport);
 const standalone = standaloneCode(ajv, {
   validateBenchmarkPack: benchmarkPack.$id,
   validateSafeFlowProjectBackup: projectBackup.$id,
   validateTrainingCurriculum: trainingCurriculum.$id,
+  validateHumanValidationFinalization: humanValidationFinalization.$id,
+  validateJudgeAnalysis: judgeAnalysis.$id,
+  validateJudgeAnalysisReport: judgeAnalysisReport.$id,
 });
 const unicodeLength = "function safeflowUcs2Length(value){let length=0;for(const unused of value)length++;return length;}";
 const code = `${unicodeLength}\n${standalone.replace(

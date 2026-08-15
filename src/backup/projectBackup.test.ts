@@ -5,7 +5,10 @@ import { buildLocalImportBundle } from "../import/buildBundle";
 import type { ImportPreflight } from "../import/types";
 import { findResumeItemId } from "../projects/progress";
 import { openSafeFlowDatabase } from "../storage/database";
-import { createAnnotatedCsv } from "./annotatedCsv";
+import { createAnnotatedCsv, createFinalizedHumanAnnotationsCsv } from "./annotatedCsv";
+import { finalizeHumanValidation } from "../finalization/finalizeHumanValidation";
+import { createJudgeAnalysis } from "../analysis/createJudgeAnalysis";
+import { getOrCreateJudgeAnalysisReport } from "../analysis/createJudgeAnalysisReport";
 import {
   createSafeFlowProjectBackup,
   parseSafeFlowProjectBackupText,
@@ -24,7 +27,7 @@ function createBundle() {
     categoryId: index === 3 ? "14.3940.4" : "1.1.1",
     metadata: { sourceProvenance: "synthetic-test-fixture" },
     fieldProvenance: { prompt: "uploaded-source" as const, categoryId: "uploaded-source" as const, taxonomy: "safeflow-derived-mapping" as const },
-    judge: { score: 999, reasoning: `ISOLATED_JUDGE_REASON_${index + 1}` },
+    judge: { score: [0, 0.5, 1][index % 3], reasoning: `ISOLATED_JUDGE_REASON_${index + 1}` },
     referenceLabel: `ISOLATED_REFERENCE_${index + 1}`,
   }));
   const preflight: ImportPreflight = {
@@ -118,5 +121,46 @@ describe("SafeFlow project backup", () => {
     expect(csv).toContain('"Unicode 🙂 evidence"');
     expect(csv).toContain('"First line\nUnicode 🙂 evidence\nLast line"');
     expect(csv).not.toMatch(/judge|ISOLATED_JUDGE_REASON|ISOLATED_REFERENCE/i);
+  });
+
+  it("round-trips an unblinded immutable analysis and rejects a corrupted analysis backup", async () => {
+    const { pack, bundle } = createBundle();
+    const database = await openSafeFlowDatabase(indexedDB, `finalized-backup-${crypto.randomUUID()}`);
+    await database.putBenchmarkPack(pack); await database.importProjectBundle(bundle);
+    for (const item of bundle.items) await database.saveAnnotation(annotation(item.id, bundle.project.id, "submitted", 1));
+    const ids = ["backup-finalization", "backup-audit", "backup-analysis", "backup-analysis-audit"];
+    const finalization = await finalizeHumanValidation(database, bundle.project.id, { acknowledgeWarnings: true, now: "2026-08-14T12:00:00.000Z", createId: () => ids.shift()! });
+    const analysis = await createJudgeAnalysis(database, finalization.id, { confirmed: true, now: "2026-08-14T12:01:00.000Z", createId: () => ids.shift()! });
+    const report = await getOrCreateJudgeAnalysisReport(database, analysis.id);
+    const backup = await createSafeFlowProjectBackup(database, bundle.project.id, "2026-08-14T12:05:00.000Z");
+    expect(backup.workflow.project.status).toBe("UNBLINDED");
+    expect(backup.workflow.humanValidationFinalizations).toEqual([finalization]);
+    expect(backup.workflow.judgeAnalyses).toEqual([analysis]);
+    expect(backup.workflow.judgeAnalysisReports).toEqual([report]);
+
+    const corrupted = structuredClone(backup);
+    corrupted.workflow.judgeAnalysisReports[0].metrics.meanAbsoluteError = 999;
+    const emptyDatabase = await openSafeFlowDatabase(indexedDB, `corrupt-finalized-backup-${crypto.randomUUID()}`);
+    await expect(restoreSafeFlowProjectBackup(emptyDatabase, corrupted)).rejects.toThrow(/integrity check failed/i);
+    expect(await emptyDatabase.getProjectDetail(bundle.project.id)).toBeUndefined();
+    emptyDatabase.close();
+
+    await database.deleteProject(bundle.project.id);
+    await restoreSafeFlowProjectBackup(database, parseSafeFlowProjectBackupText(serializeSafeFlowProjectBackup(backup)));
+    const restored = await database.getLatestHumanValidationFinalization(bundle.project.id);
+    const restoredAnalysis = await database.getJudgeAnalysis(analysis.id);
+    const restoredReport = await database.getJudgeAnalysisReport(report.id);
+    expect(restored?.id).toBe(finalization.id);
+    expect(restored?.snapshotHash).toBe(finalization.snapshotHash);
+    expect(restoredAnalysis).toEqual(analysis);
+    expect(restoredReport).toEqual(report);
+    expect((await database.getProjectDetail(bundle.project.id))?.project.status).toBe("UNBLINDED");
+    await expect(database.saveAnnotation({ ...annotation(bundle.items[0].id, bundle.project.id, "submitted", 2), updatedAt: "later" })).rejects.toThrow(/locked/i);
+
+    const csv = createFinalizedHumanAnnotationsCsv(restored!);
+    expect(csv).toContain('"human_finalized"');
+    expect(csv).toContain(`"${finalization.snapshotHash}"`);
+    expect(csv).not.toMatch(/judge|ISOLATED_JUDGE_REASON|ISOLATED_REFERENCE/i);
+    database.close();
   });
 });

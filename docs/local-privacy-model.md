@@ -33,13 +33,19 @@ Production application code does not call `fetch`, `XMLHttpRequest`, `sendBeacon
 
 Project backup and annotated CSV exports are generated from local IndexedDB records using in-browser `Blob` downloads. Restore reads the user-selected backup locally and performs no upload. Backup files contain evaluation data and should be handled as sensitive local files. Within the JSON format, judge and reference artifacts remain structurally separated from the resumable annotation workflow; after restore they return to their isolated IndexedDB stores. Annotated CSV export never reads those artifact stores.
 
+Human Validation Finalization does not weaken blinding. Snapshot preparation and atomic commit transact only over project, item, local annotation, import, benchmark-pack, finalization, and audit stores. Judge and reference stores are not opened. `HUMAN_FINALIZED` freezes the human side but does not unblind the automated judge. Finalized results and finalized CSV read the immutable human snapshot only.
+
+Judge data crosses that boundary only after the researcher chooses **Compare With Automated Judge** and acknowledges the warning for a specific finalization. That action atomically creates an immutable, locally hashed analysis and transitions the project to `UNBLINDED`. No evaluation data is transmitted, and reference artifacts remain outside the comparison.
+
+Reliability reports are derived locally from that immutable analysis and its hash-linked human finalization. Report generation does not reopen source judge artifacts, current annotations, or reference artifacts.
+
 Training content is a bundled static benchmark-pack asset. Training sessions, reference-open flags, confidence, and append-only attempts remain in separate local IndexedDB stores. They are not telemetry and are never transmitted. Immediate practice feedback intentionally reveals the packaged gold answer only after a local attempt is saved; production annotation routes remain structurally blinded and do not query training stores.
 
 This repository does not attempt to protect against a compromised browser, malicious browser extensions, operating-system malware, a hostile origin serving modified bundles, or a person with access to the unlocked browser profile. Local-first limits transmission; it is not endpoint encryption.
 
 ## Browser-origin caveat
 
-IndexedDB is scoped to a browser origin. Running the app under a different hostname, port, or protocol creates a different data silo. Clearing site data or the browser profile can permanently remove records. Export, backup, encryption-at-rest, and recovery workflows are not implemented in the skeleton and must be designed before collecting irreplaceable research data.
+IndexedDB is scoped to a browser origin. Running the app under a different hostname, port, or protocol creates a different data silo. Clearing site data or the browser profile can permanently remove records. Local backup/restore is implemented, including finalized-snapshot integrity verification, but automatic backup, encryption at rest, and remote recovery are not.
 
 ## Privacy review checklist for future changes
 

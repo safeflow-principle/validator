@@ -11,6 +11,8 @@ const TrainingHomePage = lazy(() => import("./pages/TrainingHomePage").then((mod
 const AirBenchTrainingIntroPage = lazy(() => import("./pages/AirBenchTrainingIntroPage").then((module) => ({ default: module.AirBenchTrainingIntroPage })));
 const AirBenchPracticePage = lazy(() => import("./pages/AirBenchPracticePage").then((module) => ({ default: module.AirBenchPracticePage })));
 const AirBenchTrainingResultsPage = lazy(() => import("./pages/AirBenchTrainingResultsPage").then((module) => ({ default: module.AirBenchTrainingResultsPage })));
+const FinalizedHumanResultsPage = lazy(() => import("./pages/FinalizedHumanResultsPage").then((module) => ({ default: module.FinalizedHumanResultsPage })));
+const JudgeAnalysisPage = lazy(() => import("./pages/JudgeAnalysisPage").then((module) => ({ default: module.JudgeAnalysisPage })));
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }, { error?: string }> {
   state: { error?: string } = {};
@@ -61,6 +63,10 @@ export function App() {
   if (review) return <RoutedPage><ProjectReviewPage projectId={decodeURIComponent(review[1])} /></RoutedPage>;
   const annotation = path.match(/^\/projects\/([^/]+)\/annotate$/);
   if (annotation) return <RoutedPage><ProjectAnnotationPage projectId={decodeURIComponent(annotation[1])} /></RoutedPage>;
+  const finalized = path.match(/^\/projects\/([^/]+)\/finalized$/);
+  if (finalized) return <RoutedPage><FinalizedHumanResultsPage projectId={decodeURIComponent(finalized[1])} /></RoutedPage>;
+  const analysis = path.match(/^\/projects\/([^/]+)\/analysis\/([^/]+)$/);
+  if (analysis) return <RoutedPage><JudgeAnalysisPage projectId={decodeURIComponent(analysis[1])} analysisId={decodeURIComponent(analysis[2])} /></RoutedPage>;
   const project = path.match(/^\/projects\/([^/]+)$/);
   if (project) return <RoutedPage><ProjectDetailPage projectId={decodeURIComponent(project[1])} /></RoutedPage>;
   return <HomePage />;

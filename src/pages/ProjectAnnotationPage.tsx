@@ -8,12 +8,14 @@ import type { Annotation, BlindedValidationItem, ProjectDetail } from "../core/t
 import { findResumeItemId } from "../projects/progress";
 import { openSafeFlowDatabase, type SafeFlowDatabase } from "../storage/database";
 import { LOCAL_VALIDATOR_ID } from "../core/constants";
+import type { HumanValidationFinalization } from "../finalization/types";
 
 export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
   const [state, dispatch] = useReducer(annotationTransition, initialAnnotationState);
   const [items, setItems] = useState<BlindedValidationItem[]>([]);
   const [detail, setDetail] = useState<ProjectDetail>();
   const [activeItemId, setActiveItemId] = useState<string>();
+  const [finalization, setFinalization] = useState<HumanValidationFinalization>();
   const annotations = useRef(new Map<string, Annotation>());
   const database = useRef<SafeFlowDatabase | undefined>(undefined);
 
@@ -25,6 +27,12 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
         db.getProjectDetail(projectId), db.getBlindedProjectItems(projectId), db.getProjectAnnotations(projectId),
       ]);
       if (!projectDetail) throw new Error("Project not found.");
+      if (projectDetail.project.status === "HUMAN_FINALIZED" || projectDetail.project.status === "UNBLINDED") {
+        const latest = await db.getLatestHumanValidationFinalization(projectId);
+        if (!latest) throw new Error("Finalized project is missing its human snapshot.");
+        if (!cancelled) { setDetail(projectDetail); setFinalization(latest); }
+        return;
+      }
       annotations.current = new Map(projectAnnotations.map((annotation) => [annotation.itemId, annotation]));
       const requested = new URLSearchParams(window.location.search).get("item");
       const itemId = requested && projectItems.some((item) => item.id === requested)
@@ -41,6 +49,8 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
         projectId,
         validatorId: LOCAL_VALIDATOR_ID,
         benchmarkPackId: projectDetail.project.benchmarkPackId,
+        benchmarkPackVersion: projectDetail.project.benchmarkPackVersion,
+        rubricVersion: projectDetail.project.benchmarkPackVersion,
         status: "draft" as const,
         answers: {},
         evidenceSpans: [],
@@ -92,6 +102,13 @@ export function ProjectAnnotationPage({ projectId }: { projectId: string }) {
     }).catch((error: unknown) => dispatch({ type: "SAVE_FAILED", message: error instanceof Error ? error.message : "Local save failed." }));
   }, [state.value === "saving" ? state.savingAnnotation : undefined, state.value === "saving" ? state.intent : undefined, items, projectId]);
 
+  if ((detail?.project.status === "HUMAN_FINALIZED" || detail?.project.status === "UNBLINDED") && finalization) return <main className="project-shell locked-finalization">
+    <header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href={`/projects/${projectId}`}>Back to Project</a></header>
+    <span className="status-pill">{detail.project.status}</span><h1>Human validation finalized</h1>
+    <p>The human-validation results for this project are locked. Production annotation controls are unavailable.</p>
+    <dl><div><dt>Finalized</dt><dd>{new Date(finalization.finalizedAt).toLocaleString()}</dd></div><div><dt>Snapshot</dt><dd className="hash-value">{finalization.snapshotHash.slice(0, 8)}…</dd></div></dl>
+    <div className="page-actions"><a className="primary-link" href={`/projects/${projectId}/finalized`}>View Finalized Human Results</a><a className="secondary-link button-link" href={`/projects/${projectId}`}>Back to Project</a></div>
+  </main>;
   if (state.value === "loading" || !detail || !activeItemId) return <main className="loading-screen"><p>Opening blinded validation item…</p></main>;
   const item = items.find((candidate) => candidate.id === activeItemId)!;
   const position = items.findIndex((candidate) => candidate.id === activeItemId) + 1;

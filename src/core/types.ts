@@ -1,6 +1,6 @@
 export type EntityId = string;
 export type IsoTimestamp = string;
-export type ProjectStatus = "READY" | "VALIDATING" | "REVIEW" | "HUMAN_COMPLETE";
+export type ProjectStatus = "READY" | "VALIDATING" | "REVIEW" | "HUMAN_COMPLETE" | "HUMAN_FINALIZED" | "UNBLINDED";
 
 export interface Project {
   id: EntityId;
@@ -43,6 +43,10 @@ export interface Annotation {
   projectId: EntityId;
   validatorId: EntityId;
   benchmarkPackId: string;
+  /** Added in database v3; legacy records are migrated from their project. */
+  benchmarkPackVersion?: string;
+  /** The current MVP uses the benchmark-pack version as the rubric version. */
+  rubricVersion?: string;
   status: "draft" | "submitted";
   answers: Record<string, AnnotationValue>;
   notes?: string;

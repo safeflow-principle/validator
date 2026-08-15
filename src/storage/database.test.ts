@@ -56,4 +56,29 @@ describe("local database", () => {
     await expect(db.saveAnnotation(stored)).rejects.toThrow(/revision must increase/);
     db.close();
   });
+
+  it("migrates legacy annotations to explicit benchmark-pack and rubric versions", async () => {
+    const name = `legacy-v2-${crypto.randomUUID()}`;
+    const legacy = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(name, 2);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        db.createObjectStore(STORE_NAMES.projects, { keyPath: "id" });
+        const annotations = db.createObjectStore(STORE_NAMES.annotations, { keyPath: "id" });
+        annotations.createIndex("by-project", "projectId");
+        db.createObjectStore(STORE_NAMES.validationItems, { keyPath: "id" }).createIndex("by-project", "projectId");
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = legacy.transaction([STORE_NAMES.projects, STORE_NAMES.annotations], "readwrite");
+    transaction.objectStore(STORE_NAMES.projects).put({ id: "p", name: "legacy", benchmarkPackId: "air-bench-2024", benchmarkPackVersion: "legacy-pack", status: "HUMAN_COMPLETE", createdAt: "now", updatedAt: "now" });
+    transaction.objectStore(STORE_NAMES.annotations).put({ id: "a", itemId: "i", projectId: "p", validatorId: "local-validator", benchmarkPackId: "air-bench-2024", status: "submitted", answers: {}, evidenceSpans: [], revision: 1, createdAt: "now", updatedAt: "now", submittedAt: "now" });
+    await new Promise<void>((resolve, reject) => { transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); });
+    legacy.close();
+
+    const migrated = await openSafeFlowDatabase(indexedDB, name);
+    expect(await migrated.getAnnotation("a")).toMatchObject({ benchmarkPackVersion: "legacy-pack", rubricVersion: "legacy-pack" });
+    migrated.close();
+  });
 });

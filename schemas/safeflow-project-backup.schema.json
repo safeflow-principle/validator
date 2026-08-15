@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "kind", "exportedAt", "provenance", "workflow", "isolatedArtifacts"],
   "properties": {
-    "schemaVersion": { "const": "1.0" },
+    "schemaVersion": { "enum": ["1.0", "1.1", "1.2", "1.3"] },
     "kind": { "const": "safeflow-project-backup" },
     "exportedAt": { "$ref": "#/$defs/nonEmpty" },
     "provenance": {
@@ -48,7 +48,11 @@
         },
         "progress": { "$ref": "#/$defs/progress" },
         "items": { "type": "array", "items": { "$ref": "#/$defs/item" } },
-        "annotations": { "type": "array", "items": { "$ref": "#/$defs/annotation" } }
+        "annotations": { "type": "array", "items": { "$ref": "#/$defs/annotation" } },
+        "humanValidationFinalizations": { "type": "array", "items": { "$ref": "https://safeflow.local/schemas/human-validation-finalization.schema.json" } },
+        "judgeAnalyses": { "type": "array", "items": { "$ref": "https://safeflow.local/schemas/judge-analysis.schema.json" } },
+        "judgeAnalysisReports": { "type": "array", "items": { "$ref": "https://safeflow.local/schemas/judge-analysis-report.schema.json" } },
+        "auditEvents": { "type": "array", "items": { "$ref": "#/$defs/auditEvent" } }
       }
     },
     "isolatedArtifacts": {
@@ -70,7 +74,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/nonEmpty" }, "name": { "$ref": "#/$defs/nonEmpty" },
         "benchmarkPackId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" },
-        "status": { "enum": ["READY", "VALIDATING", "REVIEW", "HUMAN_COMPLETE"] },
+        "status": { "enum": ["READY", "VALIDATING", "REVIEW", "HUMAN_COMPLETE", "HUMAN_FINALIZED", "UNBLINDED"] },
         "createdAt": { "$ref": "#/$defs/nonEmpty" }, "updatedAt": { "$ref": "#/$defs/nonEmpty" }
       }
     },
@@ -93,6 +97,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/nonEmpty" }, "itemId": { "$ref": "#/$defs/nonEmpty" }, "projectId": { "$ref": "#/$defs/nonEmpty" },
         "validatorId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkPackId": { "$ref": "#/$defs/nonEmpty" },
+        "benchmarkPackVersion": { "$ref": "#/$defs/nonEmpty" }, "rubricVersion": { "$ref": "#/$defs/nonEmpty" },
         "status": { "enum": ["draft", "submitted"] },
         "answers": { "type": "object", "additionalProperties": { "$ref": "#/$defs/annotationValue" } },
         "notes": { "type": "string" }, "evidenceSpans": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
@@ -136,6 +141,38 @@
         "id": { "$ref": "#/$defs/nonEmpty" }, "itemId": { "$ref": "#/$defs/nonEmpty" },
         "label": { "anyOf": [{ "$ref": "#/$defs/annotationValue" }, { "type": "object", "additionalProperties": { "$ref": "#/$defs/annotationValue" } }] },
         "provenance": { "type": "string" }, "createdAt": { "$ref": "#/$defs/nonEmpty" }
+      }
+    },
+    "auditEvent": { "oneOf": [{ "$ref": "#/$defs/humanFinalizationAuditEvent" }, { "$ref": "#/$defs/judgeAnalysisAuditEvent" }, { "$ref": "#/$defs/judgeAnalysisReportAuditEvent" }] },
+    "humanFinalizationAuditEvent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "type", "projectId", "finalizationId", "finalizationSequence", "createdAt", "metadata"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmpty" }, "type": { "const": "human_validation_finalized" }, "projectId": { "$ref": "#/$defs/nonEmpty" },
+        "finalizationId": { "$ref": "#/$defs/nonEmpty" }, "finalizationSequence": { "type": "integer", "minimum": 1 }, "createdAt": { "$ref": "#/$defs/nonEmpty" },
+        "metadata": { "type": "object", "additionalProperties": false, "required": ["snapshotHash", "itemCount", "benchmarkId", "benchmarkVersion", "rubricVersion"], "properties": {
+          "snapshotHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "itemCount": { "type": "integer", "minimum": 1 }, "benchmarkId": { "$ref": "#/$defs/nonEmpty" }, "benchmarkVersion": { "$ref": "#/$defs/nonEmpty" }, "rubricVersion": { "$ref": "#/$defs/nonEmpty" }
+        } }
+      }
+    },
+    "judgeAnalysisAuditEvent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "type", "projectId", "finalizationId", "analysisId", "createdAt", "metadata"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmpty" }, "type": { "const": "judge_analysis_created" }, "projectId": { "$ref": "#/$defs/nonEmpty" }, "finalizationId": { "$ref": "#/$defs/nonEmpty" }, "analysisId": { "$ref": "#/$defs/nonEmpty" }, "createdAt": { "$ref": "#/$defs/nonEmpty" },
+        "metadata": { "type": "object", "additionalProperties": false, "required": ["finalizationHash", "judgeArtifactSetHash", "analysisHash", "judgeId", "itemCount"], "properties": {
+          "finalizationHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "judgeArtifactSetHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "analysisHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "judgeId": { "$ref": "#/$defs/nonEmpty" }, "itemCount": { "type": "integer", "minimum": 1 }
+        } }
+      }
+    },
+    "judgeAnalysisReportAuditEvent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "type", "projectId", "finalizationId", "analysisId", "reportId", "createdAt", "metadata"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmpty" }, "type": { "const": "judge_analysis_report_created" }, "projectId": { "$ref": "#/$defs/nonEmpty" }, "finalizationId": { "$ref": "#/$defs/nonEmpty" }, "analysisId": { "$ref": "#/$defs/nonEmpty" }, "reportId": { "$ref": "#/$defs/nonEmpty" }, "createdAt": { "$ref": "#/$defs/nonEmpty" },
+        "metadata": { "type": "object", "additionalProperties": false, "required": ["analysisHash", "finalizationHash", "methodologyVersion", "reportHash", "itemCount"], "properties": {
+          "analysisHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "finalizationHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "methodologyVersion": { "$ref": "#/$defs/nonEmpty" }, "reportHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "itemCount": { "type": "integer", "minimum": 1 }
+        } }
       }
     }
   }

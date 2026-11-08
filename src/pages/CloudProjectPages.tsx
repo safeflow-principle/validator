@@ -3,6 +3,7 @@ import { getSupabaseClient } from "../cloud/client";
 import { SupabaseAnnotationRepository } from "../cloud/annotationRepository";
 import type { Annotation, BlindedValidationItem, ProjectDetail } from "../core/types";
 import { ProjectAnnotationPage } from "./ProjectAnnotationPage";
+import { assignCloudProjectValidator, listCloudWorkspaces } from "../cloud/repositories";
 
 async function workspaceForProject(projectId: string): Promise<string> {
   const { data, error } = await getSupabaseClient().from("projects").select("workspace_id").eq("id", projectId).single();
@@ -16,15 +17,15 @@ export function CloudProjectAnnotationPage({ projectId }: { projectId: string })
 }
 
 function useCloudHumanProject(projectId: string) {
-  const [value, setValue] = useState<{ detail: ProjectDetail; items: BlindedValidationItem[]; annotations: Annotation[] }>();
+  const [value, setValue] = useState<{ detail: ProjectDetail; items: BlindedValidationItem[]; annotations: Annotation[]; role?: string }>();
   const [error, setError] = useState<string>();
   useEffect(() => {
     let active = true;
     void workspaceForProject(projectId).then(async (workspaceId) => {
       const repository = new SupabaseAnnotationRepository(workspaceId);
-      const [detail, items, annotations] = await Promise.all([repository.getProjectDetail(projectId), repository.getBlindedProjectItems(projectId), repository.getProjectAnnotations(projectId)]);
+      const [detail, items, annotations, workspaces] = await Promise.all([repository.getProjectDetail(projectId), repository.getBlindedProjectItems(projectId), repository.getProjectAnnotations(projectId), listCloudWorkspaces()]);
       if (!detail) throw new Error("Cloud project not found.");
-      if (active) setValue({ detail, items, annotations });
+      if (active) setValue({ detail, items, annotations, role: workspaces.find((entry) => entry.workspace.id === workspaceId)?.membership.role });
     }).catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "Could not open cloud project."); });
     return () => { active = false; };
   }, [projectId]);
@@ -33,12 +34,19 @@ function useCloudHumanProject(projectId: string) {
 
 export function CloudProjectDetailPage({ projectId }: { projectId: string }) {
   const { value, error } = useCloudHumanProject(projectId);
+  const [validatorEmail, setValidatorEmail] = useState("");
+  const [assignmentMessage, setAssignmentMessage] = useState<string>();
   if (error) return <main className="project-shell"><h1>Could not open cloud project</h1><p role="alert">{error}</p><a href="/cloud">Cloud Workspace</a></main>;
   if (!value) return <main className="loading-screen"><p>Loading cloud project…</p></main>;
   const { detail } = value;
+  async function assignValidator(event: React.FormEvent) {
+    event.preventDefault(); setAssignmentMessage("Assigning validator…");
+    try { await assignCloudProjectValidator(projectId, validatorEmail); setValidatorEmail(""); setAssignmentMessage("Validator assigned to this project."); }
+    catch (reason) { setAssignmentMessage(reason instanceof Error ? reason.message : "Could not assign validator."); }
+  }
   const started = detail.progress.drafts + detail.progress.submitted > 0;
   const complete = detail.progress.total > 0 && detail.progress.submitted === detail.progress.total;
-  return <main className="project-shell"><header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href="/cloud">Cloud Workspace</a></header><span className="status-pill">CLOUD · {detail.project.status}</span><h1>{detail.project.name}</h1><p>This project is stored in your authenticated SafeFlow cloud workspace and may be accessed by authorized workspace members.</p><section className="detail-grid"><article className="detail-card"><h2>Project information</h2><dl><div><dt>Benchmark</dt><dd>{detail.project.benchmarkPackId}</dd></div><div><dt>Benchmark-pack version</dt><dd>{detail.project.benchmarkPackVersion}</dd></div><div><dt>Source filename</dt><dd>{detail.sourceName}</dd></div><div><dt>Source SHA-256</dt><dd className="hash-value">{detail.importRun?.sourceSha256 ?? "Unavailable"}</dd></div><div><dt>Total items</dt><dd>{detail.progress.total}</dd></div></dl></article><article className="detail-card"><h2>Human-validation progress</h2><dl className="progress-breakdown"><div><dt>Unseen</dt><dd>{detail.progress.unseen}</dd></div><div><dt>Draft</dt><dd>{detail.progress.drafts}</dd></div><div><dt>Submitted</dt><dd>{detail.progress.submitted}</dd></div><div><dt>Flagged</dt><dd>{detail.progress.flagged}</dd></div><div><dt>Low confidence</dt><dd>{detail.progress.lowConfidence}</dd></div></dl><progress max="100" value={detail.progress.percentComplete}/><strong>{detail.progress.percentComplete}% complete</strong></article></section>{complete && <section className="completion-banner"><h2>Human validation complete</h2><p>Automated-judge results remain blinded.</p></section>}<div className="page-actions">{!complete && <a className="primary-link" href={`/cloud/projects/${projectId}/annotate`}>{started?"Resume Validation":"Start Validation"}</a>}<a className={complete?"primary-link":"secondary-link button-link"} href={`/cloud/projects/${projectId}/review`}>{complete?"Review Before Finalization":"Review Annotations"}</a></div></main>;
+  return <main className="project-shell"><header className="page-header"><a className="wordmark" href="/">SafeFlow</a><a href="/cloud">Cloud Workspace</a></header><span className="status-pill">CLOUD · {detail.project.status}</span><h1>{detail.project.name}</h1><p>This project is stored in your authenticated SafeFlow cloud workspace and may be accessed by authorized workspace members.</p><section className="detail-grid"><article className="detail-card"><h2>Project information</h2><dl><div><dt>Benchmark</dt><dd>{detail.project.benchmarkPackId}</dd></div><div><dt>Benchmark-pack version</dt><dd>{detail.project.benchmarkPackVersion}</dd></div><div><dt>Source filename</dt><dd>{detail.sourceName}</dd></div><div><dt>Source SHA-256</dt><dd className="hash-value">{detail.importRun?.sourceSha256 ?? "Unavailable"}</dd></div><div><dt>Total items</dt><dd>{detail.progress.total}</dd></div></dl></article><article className="detail-card"><h2>Human-validation progress</h2><dl className="progress-breakdown"><div><dt>Unseen</dt><dd>{detail.progress.unseen}</dd></div><div><dt>Draft</dt><dd>{detail.progress.drafts}</dd></div><div><dt>Submitted</dt><dd>{detail.progress.submitted}</dd></div><div><dt>Flagged</dt><dd>{detail.progress.flagged}</dd></div><div><dt>Low confidence</dt><dd>{detail.progress.lowConfidence}</dd></div></dl><progress max="100" value={detail.progress.percentComplete}/><strong>{detail.progress.percentComplete}% complete</strong></article></section>{value.role === "OWNER" && <section className="backup-restore-card"><div><strong>Assign a validator</strong><p>The account must already be an accepted VALIDATOR member of this workspace.</p></div><form onSubmit={assignValidator}><label>Email<input onChange={(event) => setValidatorEmail(event.target.value)} required type="email" value={validatorEmail} /></label><button className="secondary-link button-link" type="submit">Assign to project</button></form>{assignmentMessage && <p role="status">{assignmentMessage}</p>}</section>}{complete && <section className="completion-banner"><h2>Human validation complete</h2><p>Automated-judge results remain blinded.</p></section>}<div className="page-actions">{!complete && <a className="primary-link" href={`/cloud/projects/${projectId}/annotate`}>{started?"Resume Validation":"Start Validation"}</a>}<a className={complete?"primary-link":"secondary-link button-link"} href={`/cloud/projects/${projectId}/review`}>{complete?"Review Before Finalization":"Review Annotations"}</a></div></main>;
 }
 
 export function CloudProjectReviewPage({ projectId }: { projectId: string }) {

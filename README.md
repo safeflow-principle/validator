@@ -1,89 +1,94 @@
 # SafeFlow Human Validator
 
-SafeFlow Human Validator is a local-first research tool for independently evaluating automated LLM judges. It supports importing a dataset, creating a local project, annotating structurally blinded items, autosaving drafts, leaving and resuming, reviewing human annotations, and finalizing an immutable human-validation snapshot without revealing automated-judge results. Projects can be exported and restored as versioned `.safeflow.json` backups, and human annotations can be inspected as judge-free CSV files.
+SafeFlow Human Validator is a local-first research application for independently evaluating automated LLM judges. It imports CSV, JSON, JSONL, or NDJSON datasets; keeps judge artifacts structurally separate during human annotation; autosaves drafts; supports evidence spans and resumable review; freezes an immutable human finalization; and requires a second, explicit action before producing a hash-linked human-versus-judge analysis.
 
-The local AIR-BENCH training module provides a separate 20-item synthetic starter lesson, including longer realistic prompt/response examples, with immediate reviewed feedback for all three labels, decisive evidence, retries, confidence calibration, and deterministic mistake patterns. Practice records never enter production annotation stores.
+The full validation exercise can run in a browser without an account, server, model API, telemetry service, or SafeFlow infrastructure. Optional Cloud Workspace features use a Supabase project controlled by the person deploying the application.
 
-The application does not transmit evaluation data. It has no authentication, backend database, server-side uploads, telemetry, remote logging, remote model calls, or managed-validation functionality.
+## What is included
 
-## Run locally
+- Local Workspace backed by browser IndexedDB, including import, mapping, preflight, annotation, review, backup/restore, finalization, deliberate unblinding, reliability reporting, and CSV/JSON export.
+- AIR-BENCH 2024 benchmark-pack assets with field-level provenance and composite discrimination/privacy reference views.
+- A separate 20-item AIR-BENCH practice course with fixed synthetic gold feedback.
+- A 20-case synthetic end-to-end fixture with saved mock judge outputs, a separate completed answer key, and independently checked expected metrics.
+- Optional authenticated Cloud Workspace migrations with Row Level Security for owners, researchers, and project-assigned validators.
 
-Requirements: a current Node.js LTS release and npm.
+## Fastest local start — no account or backend
+
+Requirements: Node.js 22.12 or newer in the Node 22 line, npm 10, and (for Cloud Workspace) Docker Desktop plus Supabase CLI 2.122.1.
 
 ```sh
-npm install
+git clone https://github.com/safeflow-principle/validator.git
+cd validator
+npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite, then choose **Open local projects** or **Import a local dataset**.
+Open the Vite URL, normally <http://localhost:5173>. Choose **Local Workspace**, then either start the practice course or import [`fixtures/airbench-like-validation-20.csv`](fixtures/airbench-like-validation-20.csv). Local Workspace does not initialize the Supabase client and does not transmit the imported evaluation data.
 
-For a safe manual exercise, import [`fixtures/airbench-like-validation-20.csv`](fixtures/airbench-like-validation-20.csv). The mock route remains available as a component/reference demo, but real imported projects are the primary workflow.
+## Reproduce the supplied validation example
+
+1. Open **Validate a Dataset** and select [`fixtures/airbench-like-validation-20.csv`](fixtures/airbench-like-validation-20.csv).
+2. Accept the suggested mappings for item ID, prompt, response, category, judge score, judge reasoning, and reference label.
+3. Complete the 20 human annotations. To reproduce the fixed calculation exactly, use the separate [`fixtures/airbench-like-validation-20-answer-key.csv`](fixtures/airbench-like-validation-20-answer-key.csv).
+4. Review and finalize the human annotations. Finalization does **not** reveal the mock judge.
+5. Choose **Compare With Automated Judge**, acknowledge that the human labels are frozen, and deliberately unblind that finalization.
+6. Compare the report with [`fixtures/airbench-like-validation-20-expected.json`](fixtures/airbench-like-validation-20-expected.json), then export the finalized CSV, analysis, or full `.safeflow.json` backup.
+
+Expected headline results are `N=20`, 65% exact agreement, ordinary Cohen's κ `0.46360153256704967`, linearly weighted κ `0.5287958115183247`, MAE `0.225`, directional bias `0.075`, and two severe `0 ↔ 1` disagreements. All example content and outputs are synthetic; this reproduces saved inputs and calculations, not future model behavior.
+
+## Run with an independent local Supabase backend
+
+Additional requirement: Docker Desktop (or another running Docker-compatible daemon). The npm lockfile pins Supabase CLI `2.75.0`.
+
+```sh
+npm ci
+npm run supabase:start
+npm run local:env
+npm run local:seed-users
+npm run local:verify-rls
+npm run dev
+```
+
+Open `/cloud` and use either disposable local identity printed by the seed command. The defaults are `owner@example.test` and `validator@example.test`, both with password `safeflow-local-demo`. These credentials exist only inside the loopback Supabase instance. Create a Local Workspace project, choose **Create Cloud Copy**, add/confirm the validator as a workspace `VALIDATOR`, and assign that validator from the cloud project page.
+
+Stop the disposable stack with:
+
+```sh
+npm run supabase:stop
+```
+
+`npm run supabase:reset` is intentionally destructive and targets the local database by explicit `--local` flag. Never add `--linked` while following this guide.
+
+See [docs/local-supabase.md](docs/local-supabase.md) for the two-user RLS checks and troubleshooting.
+
+## Verification
 
 ```sh
 npm test
 npm run build
+# or both:
+npm run check
 ```
 
-To regenerate AIR-BENCH prompt and taxonomy assets from the two local `llm_eval_clean` exports:
+The build is a static Vite application in `dist/`. There are no server routes or remote model calls.
 
-```sh
-npm run import:airbench -- \
-  --prompt-set /path/to/airbench_default_prompt_set.json \
-  --validation /path/to/airbench_default_validation.jsonl
-```
+## Configuration and deployment
 
-The importer is read-only with respect to its sources and makes no network calls. See [docs/airbench-artifact-audit.md](docs/airbench-artifact-audit.md) for the schema and provenance audit.
+- [Configuration reference](docs/configuration.md)
+- [Deploy to a fresh Supabase and Vercel project](docs/deployment.md)
+- [Architecture](docs/architecture.md)
+- [Privacy and trust boundaries](docs/local-privacy-model.md)
+- [Judge-analysis methodology](docs/judge-analysis-methodology.md)
+- [Known limitations](docs/limitations.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security reporting](SECURITY.md)
 
-## Implemented foundation
+The hosted SafeFlow instance is an optional convenience and is not required by this release. A fresh clone with no environment file remains entirely in Local Workspace mode.
 
-- Core entities support `project → items → multiple annotations → adjudicated annotation`.
-- IndexedDB stores annotation data separately from judge and reference artifacts.
-- Annotation-facing APIs return a structurally blinded item type.
-- Benchmark packs are validated against a versioned JSON Schema.
-- The AIR-BENCH 2024 pack is intentionally a skeleton; missing official taxonomy and rubrics are represented as unavailable.
-- The reducer-based annotation state machine supports editable drafts and submissions, autosave, validation, retryable save errors, evidence spans, and monotonic revisions.
-- The mock route uses only synthetic data.
-- AIR-BENCH reference metadata preserves exact source encodings while rendering the separate 45-node conceptual taxonomy.
-- Imported judge scores/reasoning and reference labels become isolated artifacts, never validation-item metadata or annotation props.
-- Dataset preflight checks mappings, required content, duplicate external IDs, scalar hidden fields, and AIR-BENCH category IDs before local persistence.
-- Recognized AIR-BENCH prompt IDs can hydrate missing canonical prompt/category metadata; explicit conflicts block import and every hydrated field records provenance.
-- `/projects`, project detail, real annotation, and human-only review routes implement deterministic source-order navigation and persistent resume semantics.
-- Project states are `READY`, `VALIDATING`, `REVIEW`, `HUMAN_COMPLETE`, `HUMAN_FINALIZED`, and `UNBLINDED`; finalization creates a separate canonical SHA-256 snapshot and locks annotation editing, while unblinding requires a second explicit confirmation.
-- Project backups preserve exact local workflow state and keep judge/reference records under a separate `isolatedArtifacts` envelope; restore is schema-validated and atomic.
-- Annotated CSV export reads only blinded items and the local validator's annotations.
-- Finalized CSV and read-only human results read from the immutable snapshot; judge data remains blinded.
-- `/training` provides approved, fixed-gold practice content in stores and routes separate from production annotation.
+## Licensing and provenance
 
-## Repository map
+Application code, original documentation, schemas, and SafeFlow-authored synthetic fixtures are available under [Apache-2.0](LICENSE). Generated AIR-BENCH prompt/taxonomy assets incorporate CC BY 4.0 material and retain separate attribution and transformation notes in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The license does not cover private evaluation runs, user-uploaded datasets, production records, or other material a user does not have the right to redistribute.
 
-```text
-benchmark-packs/
-  air-bench-2024/pack.json     # first pack; provenance-safe skeleton
-docs/
-  architecture.md
-  benchmark-pack-spec.md
-  implementation-spec.md
-  local-privacy-model.md
-  managed-validation-future.md
-schemas/
-  benchmark-pack.schema.json   # JSON Schema draft 2020-12
-src/
-  annotation/                  # blinded UI and pure state machine
-  benchmarks/                  # validated pack loader
-  core/                        # domain interfaces
-  finalization/                # eligibility, canonical hash, immutable reader
-  pages/                       # route-level composition
-  projects/                    # progress and deterministic resume rules
-  import/                      # parsing, hydration, mapping, preflight, bundle construction
-  storage/                     # native IndexedDB schema and repository
-  test/                        # shared test setup
-  App.tsx
-  routes.ts
-  styles.css
-```
+## Project status
 
-Architectural rationale is in [docs/architecture.md](docs/architecture.md). Privacy constraints are in [docs/local-privacy-model.md](docs/local-privacy-model.md). The portable backup contract is documented in [docs/local-project-backup-spec.md](docs/local-project-backup-spec.md), and the practice boundary in [docs/training-practice-spec.md](docs/training-practice-spec.md).
-
-## Current scope limits
-
-Explicit judge unblinding and immutable methodology-versioned reports now include a fixed-orientation 3×3 confusion matrix, severe directional errors, ordinary and linearly weighted Cohen's κ, MAE, directional bias, AIR taxonomy breakdowns, and case drill-down. Confidence intervals, adjudication, reference-label comparison, human-human agreement, PDF reports, import preview pagination, cancellation/recovery, multi-validator workflows, and independent rubric migration remain future work.
+This is research software. Blinding, immutability, and RLS reduce accidental leakage and workflow errors, but a person controlling the browser, source bundle, local database, or deployment can inspect or modify their own environment. Reliability metrics are descriptive and do not make a human annotation an adjudicated gold label.

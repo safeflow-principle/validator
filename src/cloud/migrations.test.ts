@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const schema = readFileSync(resolve(process.cwd(), "supabase/migrations/202608140001_cloud_workspaces.sql"), "utf8");
 const operations = readFileSync(resolve(process.cwd(), "supabase/migrations/202608140002_cloud_operations.sql"), "utf8");
 const archiveImport = readFileSync(resolve(process.cwd(), "supabase/migrations/202608140005_finalized_archive_import.sql"), "utf8");
+const validatorAssignment = readFileSync(resolve(process.cwd(), "supabase/migrations/202608140006_validator_assignment.sql"), "utf8");
 
 describe("cloud database security migrations", () => {
   it("enables RLS on every exposed research table", () => {
@@ -35,5 +36,12 @@ describe("cloud database security migrations", () => {
     expect(archiveImport).toContain("report_sha256");
     expect(archiveImport).toContain("Analysis does not reference the imported finalization hash");
     expect(archiveImport).toContain("Report does not reference the imported analysis hash");
+  });
+
+  it("allows only owners to assign accepted validator members to a project", () => {
+    expect(validatorAssignment).toContain("function public.assign_project_validator");
+    expect(validatorAssignment).toContain("private.project_role(target_project_id) <> 'OWNER'");
+    expect(validatorAssignment).toContain("wm.role = 'VALIDATOR'");
+    expect(validatorAssignment).toContain("on conflict (project_id, validator_id) do nothing");
   });
 });

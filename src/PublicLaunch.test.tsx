@@ -19,9 +19,14 @@ describe("public launch experience", () => {
     expect(screen.getByRole("heading", { name: "Human validation for AI evaluations." })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Start AIR-BENCH Training" })).toHaveAttribute("href", "/training/air-bench-2024");
     expect(screen.getByRole("link", { name: "Validate a Dataset" })).toHaveAttribute("href", "/settings/data");
-    expect(screen.getByRole("link", { name: /Open Projects/ })).toHaveAttribute("href", "/projects");
+    expect(screen.getByRole("link", { name: /Open Local Projects/ })).toHaveAttribute("href", "/projects");
+    expect(screen.getAllByText("No account required").length).toBeGreaterThan(0);
+    expect(screen.getByText("Invitation required")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign in to Cloud Workspace" })).toHaveAttribute("href", "/cloud");
     expect(screen.getByText("Automated evaluators need validation too.")).toBeInTheDocument();
+    expect(screen.getByText(/free to use during the public beta/i)).toBeInTheDocument();
     expect(screen.getByText(/Benchmark-aware/)).toHaveTextContent("Structurally blinded");
+    expect(screen.getByRole("link", { name: /How does LLM judge validation work/ })).toHaveAttribute("href", "/docs/llm-judge-validation");
     expect(screen.getByText("Work entirely in this browser.")).toBeInTheDocument();
     expect(screen.getByText("Your evaluation project data is not uploaded when using Local Workspace.")).toBeInTheDocument();
     expect(screen.getByText("Collaborate with authorized researchers.")).toBeInTheDocument();
@@ -37,7 +42,7 @@ describe("public launch experience", () => {
     window.history.replaceState({}, "", "/cloud");
     rerender(<AppChrome><main>Cloud content</main></AppChrome>);
     expect(screen.getByText("CLOUD")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Workspace" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Cloud Workspace" })).toBeInTheDocument();
   });
 
   it("opens the default Local projects view without contacting a cloud service", async () => {
@@ -51,6 +56,7 @@ describe("public launch experience", () => {
   it.each([
     ["/docs", "SafeFlow Validator Documentation"],
     ["/docs/getting-started", "Getting Started"],
+    ["/docs/llm-judge-validation", "How LLM Judge Validation Works"],
     ["/docs/dataset-format", "Dataset Format"],
     ["/docs/air-bench", "AIR-BENCH Guide"],
     ["/docs/methodology", "Methodology"],
@@ -60,6 +66,17 @@ describe("public launch experience", () => {
     window.history.replaceState({}, "", path);
     render(<App />);
     expect(await screen.findByRole("heading", { name: heading, level: 1 })).toBeInTheDocument();
+  });
+
+  it("presents human and automated evaluation as independent lanes before unblinding", async () => {
+    window.history.replaceState({}, "", "/docs/llm-judge-validation");
+    render(<App />);
+    expect(await screen.findByText("The human should normally remain blinded to the automated judge result during independent validation.")).toBeInTheDocument();
+    expect(screen.getByText("A human annotation is not automatically a gold-standard label.")).toBeInTheDocument();
+    expect(screen.getAllByText("LLM Judge").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Human Evaluator").length).toBeGreaterThan(0);
+    expect(screen.getByText("Intentional unblinding")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Learn how SafeFlow reports judge reliability →" })).toHaveAttribute("href", "/docs/methodology");
   });
 
   it("renders domain project states with consistent human-facing labels", () => {

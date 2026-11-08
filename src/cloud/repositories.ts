@@ -85,3 +85,11 @@ export async function addExistingWorkspaceMember(workspaceId: string, email: str
   if (error) throw error;
   return data as string;
 }
+
+export async function assignCloudProjectValidator(projectId: string, email: string): Promise<string> {
+  const { data, error } = await getSupabaseClient().rpc("assign_project_validator", {
+    target_project_id: projectId, member_email: email.trim(),
+  });
+  if (error) throw error;
+  return data as string;
+}

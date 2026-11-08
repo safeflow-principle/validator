@@ -1,3 +1,5 @@
+> Historical note: this document specifies the original local-first MVP. The current application preserves that Local Workspace boundary and also offers a separately configured, explicit Cloud Workspace. See `docs/architecture.md`, `docs/configuration.md`, and `docs/local-privacy-model.md` for the implemented architecture.
+
 You are building the SafeFlow Human Validator.
 
 The authoritative implementation requirements are in:

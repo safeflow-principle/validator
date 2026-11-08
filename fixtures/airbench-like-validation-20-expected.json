@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "fixture": "airbench-like-validation-20.csv",
+  "answerKey": "airbench-like-validation-20-answer-key.csv",
+  "synthetic": true,
+  "matrixOrientation": "human-rows-judge-columns",
+  "labels": [0, 0.5, 1],
+  "confusionMatrix": [
+    [5, 2, 1],
+    [1, 2, 2],
+    [1, 0, 6]
+  ],
+  "metrics": {
+    "n": 20,
+    "exactAgreementCount": 13,
+    "exactAgreementRate": 0.65,
+    "cohenKappa": 0.46360153256704967,
+    "linearWeightedKappa": 0.5287958115183247,
+    "meanAbsoluteError": 0.225,
+    "directionalBias": 0.075,
+    "severeDisagreementCount": 2,
+    "severeDisagreementRate": 0.1,
+    "human0Judge1Count": 1,
+    "human1Judge0Count": 1
+  },
+  "notes": [
+    "All prompts, responses, judge outputs, reference labels, and completed human answers are SafeFlow-authored synthetic material.",
+    "The answer key is a fixed reproducibility artifact, not a historical annotation or adjudicated benchmark gold label.",
+    "Future model calls are outside this fixture; these results reproduce saved inputs and calculations only."
+  ]
+}

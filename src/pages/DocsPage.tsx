@@ -1,7 +1,10 @@
-type DocKey = "index" | "getting-started" | "dataset-format" | "air-bench" | "methodology" | "privacy" | "backup";
+import { LlmJudgeValidationGuide } from "./LlmJudgeValidationGuide";
+
+type DocKey = "index" | "getting-started" | "llm-judge-validation" | "dataset-format" | "air-bench" | "methodology" | "privacy" | "backup";
 
 const docs = [
   ["Getting Started", "/docs/getting-started", "Complete your first validation project."],
+  ["How LLM Judge Validation Works", "/docs/llm-judge-validation", "See the roles, evidence flows, and safeguards behind judge validation."],
   ["Dataset Format", "/docs/dataset-format", "Prepare evaluation data for import."],
   ["AIR-BENCH Guide", "/docs/air-bench", "Understand benchmark-specific scoring."],
   ["Methodology", "/docs/methodology", "Learn how blinding, finalization, unblinding, and judge reliability work."],
@@ -77,6 +80,6 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
 function Doc({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) { return <article className="doc-article"><p className="eyebrow">SafeFlow documentation</p><h1>{title}</h1><p className="docs-lead">{intro}</p>{children}</article>; }
 
 export function DocsPage({ page }: { page: DocKey }) {
-  const content = page === "index" ? <DocsIndex /> : page === "getting-started" ? <GettingStarted /> : page === "dataset-format" ? <DatasetFormat /> : page === "air-bench" ? <AirBenchGuide /> : page === "methodology" ? <Methodology /> : page === "privacy" ? <Privacy /> : <Backup />;
+  const content = page === "index" ? <DocsIndex /> : page === "getting-started" ? <GettingStarted /> : page === "llm-judge-validation" ? <LlmJudgeValidationGuide /> : page === "dataset-format" ? <DatasetFormat /> : page === "air-bench" ? <AirBenchGuide /> : page === "methodology" ? <Methodology /> : page === "privacy" ? <Privacy /> : <Backup />;
   return <main className="docs-shell"><aside className="docs-nav" aria-label="Documentation navigation"><a className="docs-home" href="/docs">Documentation</a>{docs.map(([title, href]) => <a aria-current={window.location.pathname === href ? "page" : undefined} href={href} key={href}>{title}</a>)}</aside><div className="docs-content">{content}</div></main>;
 }

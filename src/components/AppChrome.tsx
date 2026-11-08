@@ -25,8 +25,8 @@ export function AppChrome({ children }: { children: ReactNode }) {
           {links.map(([label, href]) => <a aria-current={routeIsActive(path, href) ? "page" : undefined} href={href} key={href}>{label}</a>)}
         </nav>
         <div className="workspace-switcher">
-          <span className="workspace-badge">{cloud ? "CLOUD" : "LOCAL"}</span>
-          <a href={cloud ? "/cloud" : "/cloud"}>{cloud ? "Workspace" : "Sign in"}</a>
+          <span className="workspace-badge" title={cloud ? "You are viewing Cloud Workspace" : "You are using Local Workspace"}>{cloud ? "CLOUD" : "LOCAL"}</span>
+          <a href="/cloud">{cloud ? "Cloud Workspace" : "Cloud sign in"}</a>
         </div>
       </header>
       <div className="app-main">{children}</div>

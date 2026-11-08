@@ -4,7 +4,7 @@ Managed validation is explicitly outside the local-first MVP. This document reco
 
 ## Not present
 
-The repository has no authentication, organization or workforce concepts, assignment service, shared database, server uploads, payments, inter-rater dashboard, remote audit service, or synchronization protocol. Local validator IDs are pseudonymous device-local identifiers, not accounts.
+This document records an early roadmap and is not a statement of current capabilities. The application now has an optional, deployer-controlled Supabase Cloud Workspace with authentication, workspace roles, and project-level validator assignment. Local Workspace remains browser-local: its validator IDs are pseudonymous device-local identifiers, not accounts. Payments, managed-workforce administration, hidden-gold quality control, and a hosted SafeFlow synchronization service are still outside the open-source application.
 
 ## What should remain reusable
 

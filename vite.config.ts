@@ -8,7 +8,8 @@ export default defineConfig(({ mode }) => {
   let connectSource = "'self'";
   if (configuredUrl) {
     const url = new URL(configuredUrl);
-    connectSource = `'self' ${url.origin} wss://${url.host}`;
+    const websocketProtocol = url.protocol === "https:" ? "wss:" : "ws:";
+    connectSource = `'self' ${url.origin} ${websocketProtocol}//${url.host}`;
   }
   return {
     plugins: [react(), {

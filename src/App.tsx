@@ -42,8 +42,8 @@ function RoutedPage({ children }: { children: ReactNode }) {
 export function App() {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
   if (path === "/") return <RoutedPage><WelcomePage /></RoutedPage>;
-  const docPage = path.match(/^\/docs(?:\/(getting-started|dataset-format|air-bench|methodology|privacy|backup))?$/);
-  if (docPage) return <RoutedPage><DocsPage page={(docPage[1] ?? "index") as "index" | "getting-started" | "dataset-format" | "air-bench" | "methodology" | "privacy" | "backup"} /></RoutedPage>;
+  const docPage = path.match(/^\/docs(?:\/(getting-started|llm-judge-validation|dataset-format|air-bench|methodology|privacy|backup))?$/);
+  if (docPage) return <RoutedPage><DocsPage page={(docPage[1] ?? "index") as "index" | "getting-started" | "llm-judge-validation" | "dataset-format" | "air-bench" | "methodology" | "privacy" | "backup"} /></RoutedPage>;
   if (path === "/mock/annotation") return <RoutedPage><MockAnnotationPage /></RoutedPage>;
   if (path === "/settings/data") return <RoutedPage><DatasetImportPage /></RoutedPage>;
   if (path === "/projects") return <RoutedPage><ProjectsPage /></RoutedPage>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateReliabilityMetrics, type NumericComparison } from "./reportMetrics";
+import { calculateReliabilityMetrics, numericComparisons, type NumericComparison } from "./reportMetrics";
 
 const rows: NumericComparison[] = [
   { itemId: "1", human: 0, judge: 0 }, { itemId: "2", human: 0, judge: 0 },
@@ -19,5 +19,11 @@ describe("judge reliability metrics", () => {
   it("returns null for undefined kappa and applies the SafeFlow small-category rule", () => {
     expect(calculateReliabilityMetrics([{ itemId: "only", human: 1, judge: 1 }]).cohenKappa).toBeNull();
     expect(calculateReliabilityMetrics(rows.slice(0, 9), 10)).toMatchObject({ cohenKappa: null, linearWeightedKappa: null });
+  });
+
+  it("does not coerce missing values into score zero", () => {
+    const comparison = { itemId: "missing", sourceRowIndex: 1, humanLabelId: "0", judgeScore: null, exactAgreement: false, judgeArtifactId: "judge" };
+    expect(() => numericComparisons([comparison])).toThrow(/judge score/i);
+    expect(() => numericComparisons([{ ...comparison, judgeScore: "" }])).toThrow(/judge score/i);
   });
 });

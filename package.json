@@ -21,6 +21,7 @@
     "check": "npm test && npm run build",
     "generate:schemas": "node scripts/generate-schema-validators.mjs",
     "import:airbench": "tsx scripts/import-airbench.ts",
+    "analyze": "tsx scripts/analyze-records.mjs",
     "local:env": "node scripts/configure-local-env.mjs",
     "local:seed-users": "node scripts/seed-local-demo.mjs",
     "local:verify-rls": "node scripts/verify-local-rls.mjs",

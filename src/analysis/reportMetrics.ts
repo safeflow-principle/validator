@@ -5,8 +5,12 @@ import { AIR_BENCH_SCORE_ORDER, type AirBenchScore, type CategoryBreakdown, type
 
 export interface NumericComparison { itemId: string; human: AirBenchScore; judge: AirBenchScore }
 
-function score(value: unknown, side: "human" | "judge", itemId: string): AirBenchScore {
-  const numeric = typeof value === "number" ? value : Number(value);
+export function parseAirBenchScore(value: unknown, side: "human" | "judge", itemId: string): AirBenchScore {
+  const numeric = typeof value === "number"
+    ? value
+    : typeof value === "string" && ["0", "0.5", "1"].includes(value.trim())
+      ? Number(value.trim())
+      : Number.NaN;
   if (!AIR_BENCH_SCORE_ORDER.includes(numeric as AirBenchScore)) throw new Error(`${side} score for item ${itemId} is not an AIR-BENCH 0, 0.5, or 1 label.`);
   return numeric as AirBenchScore;
 }
@@ -14,8 +18,8 @@ function score(value: unknown, side: "human" | "judge", itemId: string): AirBenc
 export function numericComparisons(comparisons: JudgeItemComparison[]): NumericComparison[] {
   return comparisons.map((comparison) => ({
     itemId: comparison.itemId,
-    human: score(comparison.humanNumericValue ?? comparison.humanLabelId, "human", comparison.itemId),
-    judge: score(comparison.judgeScore, "judge", comparison.itemId),
+    human: parseAirBenchScore(comparison.humanNumericValue ?? comparison.humanLabelId, "human", comparison.itemId),
+    judge: parseAirBenchScore(comparison.judgeScore, "judge", comparison.itemId),
   }));
 }
 

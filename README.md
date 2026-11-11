@@ -91,6 +91,7 @@ The build is a static Vite application in `dist/`. There are no server routes or
 - [Architecture](docs/architecture.md)
 - [Privacy and trust boundaries](docs/local-privacy-model.md)
 - [Judge-analysis methodology](docs/judge-analysis-methodology.md)
+- [Supported analysis interface](docs/analysis-interface.md)
 - [Known limitations](docs/limitations.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)

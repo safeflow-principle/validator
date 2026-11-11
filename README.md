@@ -1,5 +1,17 @@
 # SafeFlow Human Validator
 
+[![CI](https://github.com/safeflow-principle/validator/actions/workflows/ci.yml/badge.svg?branch=codex%2Fopen-source-release)](https://github.com/safeflow-principle/validator/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/safeflow-principle/validator)](https://github.com/safeflow-principle/validator/releases/tag/v0.1.0)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
+**Current documented release:** [v0.1.0](https://github.com/safeflow-principle/validator/releases/tag/v0.1.0) · [License](LICENSE) · [Documentation](docs/) · [Configuration](docs/configuration.md) · [Independent deployment](docs/deployment.md) · [Known limitations](docs/limitations.md)
+
+For a reproducible checkout, clone the tagged release:
+
+```sh
+git clone --branch v0.1.0 --depth 1 https://github.com/safeflow-principle/validator.git
+```
+
 SafeFlow Human Validator is a local-first research application for independently evaluating automated LLM judges. It imports CSV, JSON, JSONL, or NDJSON datasets; keeps judge artifacts structurally separate during human annotation; autosaves drafts; supports evidence spans and resumable review; freezes an immutable human finalization; and requires a second, explicit action before producing a hash-linked human-versus-judge analysis.
 
 The full validation exercise can run in a browser without an account, server, model API, telemetry service, or SafeFlow infrastructure. Optional Cloud Workspace features use a Supabase project controlled by the person deploying the application.
@@ -38,7 +50,7 @@ Expected headline results are `N=20`, 65% exact agreement, ordinary Cohen's κ `
 
 ## Run with an independent local Supabase backend
 
-Additional requirement: Docker Desktop (or another running Docker-compatible daemon). The npm lockfile pins Supabase CLI `2.75.0`.
+Additional requirement: Docker Desktop (or another running Docker-compatible daemon). The npm lockfile pins Supabase CLI `2.122.1`.
 
 ```sh
 npm ci
